@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Flowrium Voice</title>
+<style>
+:root {
+  --glow: #6366f1;
+  --glow2: #a78bfa;
+  --glow-active: #f43f5e;
+  --glow-active2: #fb7185;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: -apple-system, "SF Pro Display", "Microsoft YaHei", sans-serif;
+  background: #000;
+  color: #fff;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+/* ── Phone frame (desktop) ──────────────────────────────── */
+
+.phone {
+  width: 100%;
+  max-width: 430px;
+  height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(170deg, #0c0c1d 0%, #0a0a1a 40%, #0f0a1a 100%);
+}
+
+@media (min-width: 431px) {
+  body { background: #111; align-items: center; }
+  .phone {
+    height: 90vh;
+    max-height: 932px;
+    border-radius: 40px;
+    margin: auto;
+    box-shadow: 0 0 80px rgba(99, 102, 241, 0.08), 0 0 0 1px rgba(255,255,255,0.06);
+  }
+}
+
+/* ── Background ambient glow ────────────────────────────── */
+
+.ambient {
+  position: absolute; bottom: -40px; left: 50%;
+  transform: translateX(-50%);
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+  transition: all 0.8s ease;
+  pointer-events: none; z-index: 0;
+}
+.ambient.active {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(244,63,94,0.18) 0%, transparent 70%);
+}
+
+/* ── Top bar ────────────────────────────────────────────── */
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; z-index: 10; flex-shrink: 0;
+  position: relative;
+}
+.topbar-title {
+  font-size: 0.8rem; color: rgba(255,255,255,0.4);
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.gear-btn {
+  background: none; border: none; color: rgba(255,255,255,0.3);
+  cursor: pointer; padding: 8px; border-radius: 12px;
+  transition: color 0.2s;
+}
+.gear-btn:hover { color: rgba(255,255,255,0.6); }
+.gear-btn svg { width: 18px; height: 18px; display: block; }
+
+/* ── Settings sheet ─────────────────────────────────────── */
+
+.settings-sheet {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(30,30,50,0.95);
+  backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 24px 40px;
+  z-index: 50;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.settings-sheet.open { transform: translateY(0); }
+
+.sheet-handle {
+  width: 36px; height: 4px; background: rgba(255,255,255,0.15);
+  border-radius: 2px; margin: 0 auto 20px;
+}
+.sheet-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; }
+
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 0.7rem; color: rgba(255,255,255,0.4); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.field input, .field select {
+  width: 100%; padding: 10px 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; color: #fff;
+  font-size: 0.85rem; outline: none;
+  transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus { border-color: var(--glow); }
+.field select option { background: #1e1e3a; }
+
+/* ── Results area ───────────────────────────────────────── */
+
+.results {
+  flex: 1; overflow-y: auto; z-index: 5; position: relative;
+  padding: 0 28px; display: flex; flex-direction: column;
+  justify-content: flex-end;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 100%);
+}
+.results::-webkit-scrollbar { display: none; }
+
+.result-item {
+  margin-bottom: 14px;
+  animation: fadeUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.result-text {
+  font-size: 1.1rem; line-height: 1.65;
+  color: rgba(255,255,255,0.92);
+  font-weight: 300;
+}
+.result-text.partial {
+  color: rgba(255,255,255,0.45);
+}
+
+.result-time {
+  font-size: 0.65rem; color: rgba(255,255,255,0.2);
+  margin-top: 4px;
+}
+
+.empty-state {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 8px; padding-bottom: 60px;
+}
+.empty-state .hint {
+  font-size: 0.8rem; color: rgba(255,255,255,0.18);
+  text-align: center;
+}
+
+/* ── Bottom: orb + button ───────────────────────────────── */
+
+.bottom {
+  flex-shrink: 0; z-index: 10; position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 24px 40px;
+}
+
+/* The orb glow */
+.orb {
+  position: relative;
+  width: 96px; height: 96px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+
+.orb-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%,
+    rgba(167,139,250,0.25) 0%,
+    rgba(99,102,241,0.15) 40%,
+    transparent 70%
+  );
+  transition: all 0.5s ease;
+}
+
+.orb.active .orb-ring {
+  background: radial-gradient(circle at 40% 35%,
+    rgba(251,113,133,0.35) 0%,
+    rgba(244,63,94,0.2) 40%,
+    transparent 70%
+  );
+  animation: orbPulse 2s ease-in-out infinite;
+}
+
+@keyframes orbPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.7; }
+}
+
+/* Outer glow rings */
+.orb-glow {
+  position: absolute; inset: -20px; border-radius: 50%;
+  border: 1px solid rgba(99,102,241,0.08);
+  opacity: 0; transition: opacity 0.5s;
+}
+.orb.active .orb-glow {
+  opacity: 1;
+  animation: ringPulse 2.5s ease-in-out infinite;
+}
+
+.orb-glow2 {
+  position: absolute; inset: -44px; border-radius: 50%;
+  border: 1px solid rgba(99,102,241,0.04);
+  opacity: 0; transition: opacity 0.5s;
+}
+.orb.active .orb-glow2 {
+  opacity: 1;
+  animation: ringPulse 2.5s ease-in-out infinite 0.4s;
+}
+
+@keyframes ringPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+/* Mic button inside orb */
+.mic-btn {
+  position: relative; z-index: 2;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s, background 0.4s;
+  box-shadow: 0 2px 20px rgba(99,102,241,0.3);
+}
+.mic-btn:active { transform: scale(0.93); }
+.mic-btn svg { width: 26px; height: 26px; fill: #fff; }
+
+.orb.active .mic-btn {
+  background: linear-gradient(135deg, #e11d48, #f43f5e);
+  box-shadow: 0 2px 24px rgba(244,63,94,0.4);
+}
+
+.status-text {
+  font-size: 0.75rem; color: rgba(255,255,255,0.3);
+  letter-spacing: 0.3px; transition: color 0.3s;
+  height: 18px;
+}
+.status-text.active { color: rgba(244,63,94,0.6); }
+
+/* ── Waveform (simple CSS bars) ─────────────────────────── */
+
+.waveform {
+  display: none; gap: 3px; align-items: center;
+  height: 32px; margin-bottom: 12px;
+}
+.orb.active ~ .status-text .waveform,
+.waveform.active { display: flex; }
+
+.wave-bar {
+  width: 3px; border-radius: 2px;
+  background: var(--glow-active);
+  animation: waveAnim 0.8s ease-in-out infinite alternate;
+}
+.wave-bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+.wave-bar:nth-child(2) { height: 16px; animation-delay: 0.1s; }
+.wave-bar:nth-child(3) { height: 24px; animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { height: 16px; animation-delay: 0.3s; }
+.wave-bar:nth-child(5) { height: 8px; animation-delay: 0.4s; }
+.wave-bar:nth-child(6) { height: 20px; animation-delay: 0.15s; }
+.wave-bar:nth-child(7) { height: 12px; animation-delay: 0.35s; }
+
+@keyframes waveAnim {
+  0% { transform: scaleY(0.4); opacity: 0.4; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+
+/* ── Mode pill ──────────────────────────────────────────── */
+
+.mode-pill {
+  position: absolute; top: 16px; right: 24px; z-index: 10;
+  display: flex; gap: 0; background: rgba(255,255,255,0.06);
+  border-radius: 20px; padding: 2px; border: 1px solid rgba(255,255,255,0.04);
+}
+.mode-opt {
+  padding: 5px 12px; border: none; background: none;
+  color: rgba(255,255,255,0.3); font-size: 0.65rem;
+  border-radius: 18px; cursor: pointer; transition: all 0.2s;
+  font-family: inherit; letter-spacing: 0.3px;
+}
+.mode-opt.active {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+}
+</style>
+</head>
+<body>
+
+<div class="phone" id="phone">
+  <!-- Ambient background glow -->
+  <div class="ambient" id="ambient"></div>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="topbar-title">Flowrium Voice</span>
+    <button class="gear-btn" onclick="toggleSettings()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Mode selector -->
+  <div class="mode-pill">
+    <button class="mode-opt active" data-mode="2pass" onclick="setMode(this)">2pass</button>
+    <button class="mode-opt" data-mode="online" onclick="setMode(this)">Online</button>
+    <button class="mode-opt" data-mode="offline" onclick="setMode(this)">Offline</button>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="empty-state" id="emptyState">
+      <div class="hint">Tap the mic to start</div>
+    </div>
+  </div>
+
+  <!-- Bottom orb area -->
+  <div class="bottom">
+    <div class="orb" id="orb">
+      <div class="orb-glow"></div>
+      <div class="orb-glow2"></div>
+      <div class="orb-ring"></div>
+      <button class="mic-btn" onclick="toggleRecording()">
+        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="23" stroke="#fff" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="23" x2="16" y2="23" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="waveform" id="waveform">
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+    </div>
+    <div class="status-text" id="statusText">Tap to speak</div>
+  </div>
+
+  <!-- Settings sheet -->
+  <div class="settings-sheet" id="settingsSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Settings</div>
+    <div class="field">
+      <label>FunASR Server</label>
+      <input type="text" id="serverUrl" value="ws://localhost:10095">
+    </div>
+    <div class="field">
+      <label>Mode</label>
+      <select id="modeSelect">
+        <option value="2pass">2pass (realtime + offline)</option>
+        <option value="online">Online (realtime only)</option>
+        <option value="offline">Offline (high accuracy)</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<script>
+const SAMPLE_RATE = 16000;
+let ws = null, mediaStream = null, audioContext = null, processor = null, isRecording = false;
+let currentMode = '2pass';
+
+// ── Mode ──────────────────────────────────────────────────
+
+function setMode(el) {
+  document.querySelectorAll('.mode-opt').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentMode = el.dataset.mode;
+  document.getElementById('modeSelect').value = currentMode;
+}
+
+document.getElementById('modeSelect').addEventListener('change', e => {
+  currentMode = e.target.value;
+  document.querySelectorAll('.mode-opt').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === currentMode);
+  });
+});
+
+// ── Settings ──────────────────────────────────────────────
+
+function toggleSettings() {
+  document.getElementById('settingsSheet').classList.toggle('open');
+}
+
+document.getElementById('settingsSheet').addEventListener('click', e => e.stopPropagation());
+document.getElementById('phone').addEventListener('click', e => {
+  if (!e.target.closest('.gear-btn') && !e.target.closest('.settings-sheet')) {
+    document.getElementById('settingsSheet').classList.remove('open');
+  }
+});
+
+// ── Recording ─────────────────────────────────────────────
+
+function toggleRecording() {
+  if (isRecording) stopRecording(); else startRecording();
+}
+
+async function startRecording() {
+  const url = document.getElementById('serverUrl').value.replace(/\/$/, '');
+  try {
+    ws = new WebSocket(url);
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = async () => {
+      ws.send(JSON.stringify({
+        mode: currentMode, chunk_size: [5, 10, 5], chunk_interval: 10,
+        wav_name: "mic", is_speaking: true, wav_format: "pcm", audio_fs: SAMPLE_RATE,
+      }));
+      await captureAudio();
+      setActive(true);
+    };
+
+    ws.onmessage = e => {
+      try { handleResult(JSON.parse(e.data)); } catch {}
+    };
+
+    ws.onclose = () => { setActive(false); };
+    ws.onerror = () => {
+      setActive(false);
+      addResult('Connection failed. Check FunASR server.', true);
+    };
+  } catch (e) {
+    addResult('Error: ' + e.message, true);
+  }
+}
+
+function stopRecording() {
+  if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ is_speaking: false }));
+  releaseAudio();
+  setTimeout(() => { if (ws) { ws.close(); ws = null; } setActive(false); }, 2000);
+}
+
+function setActive(active) {
+  isRecording = active;
+  document.getElementById('orb').classList.toggle('active', active);
+  document.getElementById('ambient').classList.toggle('active', active);
+  document.getElementById('waveform').classList.toggle('active', active);
+  document.getElementById('statusText').textContent = active ? 'Listening' : 'Tap to speak';
+  document.getElementById('statusText').classList.toggle('active', active);
+}
+
+// ── Audio capture ─────────────────────────────────────────
+
+async function captureAudio() {
+  mediaStream = await navigator.mediaDevices.getUserMedia({
+    audio: { sampleRate: SAMPLE_RATE, channelCount: 1, echoCancellation: true, noiseSuppression: true }
+  });
+  audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
+  const src = audioContext.createMediaStreamSource(mediaStream);
+  processor = audioContext.createScriptProcessor(4096, 1, 1);
+  processor.onaudioprocess = e => {
+    if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(float32ToInt16(e.inputBuffer.getChannelData(0)).buffer);
+  };
+  src.connect(processor);
+  processor.connect(audioContext.destination);
+}
+
+function releaseAudio() {
+  if (processor) { processor.disconnect(); processor = null; }
+  if (audioContext) { audioContext.close(); audioContext = null; }
+  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+}
+
+function float32ToInt16(f32) {
+  const i16 = new Int16Array(f32.length);
+  for (let i = 0; i < f32.length; i++) {
+    const s = Math.max(-1, Math.min(1, f32[i]));
+    i16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+  return i16;
+}
+
+// ── Results ───────────────────────────────────────────────
+
+function handleResult(data) {
+  const text = data.text || '';
+  if (!text) return;
+  const isFinal = data.is_final || data.mode === 'offline';
+
+  if (data.mode === 'offline') {
+    // 2pass: replace last partial with final
+    const last = document.querySelector('.result-item:last-child .result-text.partial');
+    if (last) {
+      last.textContent = text;
+      last.classList.remove('partial');
+      return;
+    }
+  }
+
+  addResult(text, isFinal);
+}
+
+function addResult(text, isFinal) {
+  const empty = document.getElementById('emptyState');
+  if (empty) empty.remove();
+
+  const results = document.getElementById('results');
+  const item = document.createElement('div');
+  item.className = 'result-item';
+
+  const txt = document.createElement('div');
+  txt.className = 'result-text' + (isFinal ? '' : ' partial');
+  txt.textContent = text;
+
+  const time = document.createElement('div');
+  time.className = 'result-time';
+  const now = new Date();
+  time.textContent = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+  item.appendChild(txt);
+  item.appendChild(time);
+
+  // If partial, update last partial instead of appending
+  if (!isFinal) {
+    const lastPartial = document.querySelector('.result-item:last-child .result-text.partial');
+    if (lastPartial) {
+      lastPartial.textContent = text;
+      return;
+    }
+  }
+
+  results.appendChild(item);
+  results.scrollTop = results.scrollHeight;
+}
+</script>
+</body>
+</html>

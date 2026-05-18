@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Models (large files)
+models/*.onnx
+models/*.bin
+models/*.pt
+
+# Audio files (test data)
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+
+# Logs
+*.log
+
+# Env
+.env
+.env.local
