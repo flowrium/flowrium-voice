@@ -69,7 +69,10 @@ body {
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 24px; z-index: 10; flex-shrink: 0;
-  position: relative;
+  position: relative; gap: 12px;
+}
+.topbar-left {
+  display: flex; align-items: center; gap: 12px;
 }
 .topbar-title {
   font-size: 0.8rem; color: rgba(255,255,255,0.4);
@@ -114,22 +117,38 @@ body {
   font-size: 0.85rem; outline: none;
   transition: border-color 0.2s;
 }
-.field input:focus, .field select:focus { border-color: var(--glow); }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--glow); }
 .field select option { background: #1e1e3a; }
+.field textarea {
+  width: 100%; padding: 10px 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; color: #fff;
+  font-size: 0.8rem; outline: none;
+  transition: border-color 0.2s;
+  resize: vertical; min-height: 72px;
+  font-family: inherit; line-height: 1.5;
+}
+.hotword-hint {
+  font-size: 0.6rem; color: rgba(255,255,255,0.25);
+  margin-top: 4px; line-height: 1.4;
+}
+.hotword-count {
+  font-size: 0.6rem; color: rgba(255,255,255,0.3);
+  margin-top: 4px; text-align: right;
+}
 
 /* ── Results area ───────────────────────────────────────── */
 
 .results {
   flex: 1; overflow-y: auto; z-index: 5; position: relative;
-  padding: 0 28px; display: flex; flex-direction: column;
+  padding: 0 28px 12px; display: flex; flex-direction: column;
   justify-content: flex-end;
-  mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 100%);
 }
 .results::-webkit-scrollbar { display: none; }
 
 .result-item {
-  margin-bottom: 14px;
+  margin-bottom: 6px;
   animation: fadeUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 @keyframes fadeUp {
@@ -281,9 +300,9 @@ body {
 /* ── Mode pill ──────────────────────────────────────────── */
 
 .mode-pill {
-  position: absolute; top: 16px; right: 24px; z-index: 10;
   display: flex; gap: 0; background: rgba(255,255,255,0.06);
   border-radius: 20px; padding: 2px; border: 1px solid rgba(255,255,255,0.04);
+  flex-shrink: 0;
 }
 .mode-opt {
   padding: 5px 12px; border: none; background: none;
@@ -305,19 +324,19 @@ body {
 
   <!-- Top bar -->
   <div class="topbar">
-    <span class="topbar-title">Flowrium Voice</span>
+    <div class="topbar-left">
+      <span class="topbar-title">Flowrium Voice</span>
+      <div class="mode-pill">
+        <button class="mode-opt active" data-mode="2pass" onclick="setMode(this)">2pass</button>
+        <button class="mode-opt" data-mode="online" onclick="setMode(this)">Online</button>
+        <button class="mode-opt" data-mode="offline" onclick="setMode(this)">Offline</button>
+      </div>
+    </div>
     <button class="gear-btn" onclick="toggleSettings()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
       </svg>
     </button>
-  </div>
-
-  <!-- Mode selector -->
-  <div class="mode-pill">
-    <button class="mode-opt active" data-mode="2pass" onclick="setMode(this)">2pass</button>
-    <button class="mode-opt" data-mode="online" onclick="setMode(this)">Online</button>
-    <button class="mode-opt" data-mode="offline" onclick="setMode(this)">Offline</button>
   </div>
 
   <!-- Results -->
@@ -361,6 +380,12 @@ body {
         <option value="offline">Offline (high accuracy)</option>
       </select>
     </div>
+    <div class="field">
+      <label>Hotwords</label>
+      <textarea id="hotwords" placeholder="Flowrium 10&#10;语音助手 8&#10;Android 6" rows="4"></textarea>
+      <div class="hotword-hint">One word per line: "term weight". Weight 1-10, higher = stronger bias. e.g. "Flowrium 10"</div>
+      <div class="hotword-count" id="hotwordCount">0 words</div>
+    </div>
   </div>
 </div>
 
@@ -368,6 +393,31 @@ body {
 const SAMPLE_RATE = 16000;
 let ws = null, mediaStream = null, audioContext = null, processor = null, isRecording = false;
 let currentMode = '2pass';
+
+// ── Hotwords ──────────────────────────────────────────────
+
+const hotwordInput = document.getElementById('hotwords');
+const hotwordCount = document.getElementById('hotwordCount');
+
+function updateHotwordCount() {
+  const lines = hotwordInput.value.trim().split('\n').filter(l => l.trim());
+  hotwordCount.textContent = lines.length + ' word' + (lines.length !== 1 ? 's' : '');
+}
+
+hotwordInput.addEventListener('input', updateHotwordCount);
+
+function buildHotwordsString() {
+  const lines = hotwordInput.value.trim().split('\n').filter(l => l.trim());
+  // FunASR format: "word1 weight1 | word2 weight2"
+  return lines.map(l => {
+    const parts = l.trim().split(/\s+/);
+    if (parts.length >= 2 && !isNaN(parts[parts.length - 1])) {
+      const weight = parts.pop();
+      return parts.join(' ') + ' ' + weight;
+    }
+    return parts.join(' ') + ' 5'; // default weight 5
+  }).join(' | ');
+}
 
 // ── Mode ──────────────────────────────────────────────────
 
@@ -411,25 +461,28 @@ async function startRecording() {
     ws.binaryType = 'arraybuffer';
 
     ws.onopen = async () => {
-      ws.send(JSON.stringify({
+      const config = {
         mode: currentMode, chunk_size: [5, 10, 5], chunk_interval: 10,
         wav_name: "mic", is_speaking: true, wav_format: "pcm", audio_fs: SAMPLE_RATE,
-      }));
+      };
+      const hotwords = buildHotwordsString();
+      if (hotwords) config.hotwords = hotwords;
+      ws.send(JSON.stringify(config));
       await captureAudio();
       setActive(true);
     };
 
     ws.onmessage = e => {
-      try { handleResult(JSON.parse(e.data)); } catch {}
+      try { handleResult(JSON.parse(e.data)); } catch(e) { console.error(e); }
     };
 
     ws.onclose = () => { setActive(false); };
     ws.onerror = () => {
       setActive(false);
-      addResult('Connection failed. Check FunASR server.', true);
+      addResultRow('Connection failed. Check FunASR server.', false);
     };
   } catch (e) {
-    addResult('Error: ' + e.message, true);
+    addResultRow('Error: ' + e.message, false);
   }
 }
 
@@ -485,22 +538,39 @@ function float32ToInt16(f32) {
 function handleResult(data) {
   const text = data.text || '';
   if (!text) return;
-  const isFinal = data.is_final || data.mode === 'offline';
+  const isFinal = data.is_final;
+  const isOnline = data.mode === '2pass-online' || data.mode === 'online';
 
-  if (data.mode === 'offline') {
-    // 2pass: replace last partial with final
-    const last = document.querySelector('.result-item:last-child .result-text.partial');
-    if (last) {
-      last.textContent = text;
-      last.classList.remove('partial');
-      return;
+  if (isFinal) {
+    // Entire utterance finished — finalize previous partial, add new final row
+    const lastPartial = document.querySelector('.result-item:last-child .result-text.partial');
+    if (lastPartial) {
+      lastPartial.textContent = text;
+      lastPartial.classList.remove('partial');
+    } else {
+      addResultRow(text, false);
+    }
+  } else if (isOnline) {
+    // Online partial — update last partial row, or create one
+    const lastPartial = document.querySelector('.result-item:last-child .result-text.partial');
+    if (lastPartial) {
+      lastPartial.textContent = text;
+    } else {
+      addResultRow(text, true);
+    }
+  } else {
+    // Offline mode (2pass-offline or offline) — finalize previous, add new final row
+    const lastPartial = document.querySelector('.result-item:last-child .result-text.partial');
+    if (lastPartial) {
+      lastPartial.textContent = text;
+      lastPartial.classList.remove('partial');
+    } else {
+      addResultRow(text, false);
     }
   }
-
-  addResult(text, isFinal);
 }
 
-function addResult(text, isFinal) {
+function addResultRow(text, isPartial) {
   const empty = document.getElementById('emptyState');
   if (empty) empty.remove();
 
@@ -509,7 +579,7 @@ function addResult(text, isFinal) {
   item.className = 'result-item';
 
   const txt = document.createElement('div');
-  txt.className = 'result-text' + (isFinal ? '' : ' partial');
+  txt.className = 'result-text' + (isPartial ? ' partial' : '');
   txt.textContent = text;
 
   const time = document.createElement('div');
@@ -519,17 +589,14 @@ function addResult(text, isFinal) {
 
   item.appendChild(txt);
   item.appendChild(time);
+  results.appendChild(item);
 
-  // If partial, update last partial instead of appending
-  if (!isFinal) {
-    const lastPartial = document.querySelector('.result-item:last-child .result-text.partial');
-    if (lastPartial) {
-      lastPartial.textContent = text;
-      return;
-    }
+  // Keep at most 10 result items
+  const items = results.querySelectorAll('.result-item');
+  if (items.length > 10) {
+    for (let i = 0; i < items.length - 10; i++) items[i].remove();
   }
 
-  results.appendChild(item);
   results.scrollTop = results.scrollHeight;
 }
 </script>
