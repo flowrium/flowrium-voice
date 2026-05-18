@@ -32,7 +32,7 @@ Flowrium Voice 是一个基于 FunASR 的公司级语音转文字（STT）快速
 
 1. **项目简介** — 一句话说明 Flowrium Voice 是什么、做什么
 2. **技术架构** — 保留现有架构图，增加：
-   - 设计决策：为什么选 FunASR
+   - 设计决策：2-3 句话说明为什么选 FunASR（开源、中文支持好、Docker 部署简单），不做深入替代分析
    - 两种连接模式：浏览器直连 vs gateway 模式
    - gateway 模式的价值（统一入口、后续扩展）
 3. **快速开始** — 保留现有 Docker + Web Demo 步骤，补充 gateway 模式启动
