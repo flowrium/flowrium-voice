@@ -9,6 +9,9 @@
 | 技术 | 说明 | 覆盖平台 |
 |------|------|---------|
 | Sherpa-ONNX | C++ ONNX 推理引擎，跨平台 | Android, Apple, C#, HarmonyOS |
+| whisper.cpp | GGML/GGUF 本地推理，跨平台 | Apple, Android, Linux, Windows |
+| Moonshine | 轻量端侧 ASR，偏实时交互 | Apple, Android, Linux |
+| WeNet Runtime | Runtime / WebSocket 服务，适合作为原生集成前的参考链路 | Apple, Android, Linux |
 | MindSpore Lite | 华为端侧推理框架，.ms 模型格式 | HarmonyOS |
 
 ## 目录结构
@@ -30,11 +33,39 @@ verification-3-edge/
 │       ├── apple/                  #   Swift / Core ML
 │       ├── csharp/                 #   NuGet
 │       └── harmonyos/              #   NAPI / ArkTS
+├── whisper.cpp/                    # 技术：whisper.cpp
+│   ├── models/
+│   ├── results/
+│   ├── scripts/
+│   ├── setup/
+│   ├── benchmarks/
+│   │   └── apple/
+│   └── integrations/
+│       └── apple/
+├── moonshine/                      # 技术：Moonshine
+│   ├── models/
+│   ├── results/
+│   ├── scripts/
+│   ├── setup/
+│   ├── benchmarks/
+│   │   └── apple/
+│   └── integrations/
+│       └── apple/
+├── wenet-runtime/                  # 技术：WeNet Runtime
+│   ├── models/
+│   ├── results/
+│   ├── scripts/
+│   ├── setup/
+│   ├── benchmarks/
+│   │   └── apple/
+│   └── integrations/
+│       └── apple/
 ├── mindspore-lite/                 # 技术：MindSpore Lite (华为备选)
 │   └── harmonyos/
 │       └── ...
 ├── results/                        # 跨平台对比结果
-└── scripts/                        # 跨平台对比脚本
+├── scripts/                        # 跨平台对比脚本
+└── common/                         # 批测共享工具
 ```
 
 ## 验证阶段
