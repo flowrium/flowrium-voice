@@ -8,7 +8,10 @@ CACHE_DIR="$ENGINE_DIR/cache"
 
 echo "=== Verifying Moonshine setup ==="
 
-MODEL_PATH="$(find "$ENGINE_DIR/models/zh" \( -name "*.onnx" -o -name "*.bin" \) | head -1)"
+MODEL_PATH="$(find "$ENGINE_DIR/models/zh" -type d -name 'base-*' | head -1)"
+if [ -z "$MODEL_PATH" ]; then
+  MODEL_PATH="$(find "$ENGINE_DIR/models/zh" \( -name "*.onnx" -o -name "*.bin" \) | head -1)"
+fi
 if [ -z "$MODEL_PATH" ]; then
   echo "No Chinese model found under $ENGINE_DIR/models/zh" >&2
   echo "Run download_models.sh first." >&2

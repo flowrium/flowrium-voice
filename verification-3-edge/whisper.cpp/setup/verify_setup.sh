@@ -31,7 +31,7 @@ TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 OUT_PREFIX="$TMP_DIR/verify"
 
-"$CLI_PATH" -m "$MODEL_PATH" -f "$TEST_AUDIO" -l zh -nt -otxt -of "$OUT_PREFIX" >/dev/null
+"$CLI_PATH" -m "$MODEL_PATH" -f "$TEST_AUDIO" -l zh -nt -ng -nfa -otxt -of "$OUT_PREFIX" >/dev/null
 
 if [ ! -f "$OUT_PREFIX.txt" ]; then
   echo "Expected transcript not produced: $OUT_PREFIX.txt" >&2

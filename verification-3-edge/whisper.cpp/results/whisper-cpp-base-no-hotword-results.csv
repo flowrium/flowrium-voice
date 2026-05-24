@@ -1,0 +1,6 @@
+id,role,version,category,file_path,expected,actual,exact_match,norm_exact_match,char_distance,expected_chars,cer,rtf,audio_duration_s,inference_time_s
+principal_001,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_001.wav,打开学校今日运行数据大屏。,,False,False,12,12,1.0,0.6617,2.838,1.878
+principal_002,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_002.wav,切换到校长驾驶舱首页。,,False,False,10,10,1.0,0.5321,2.456,1.3065
+principal_003,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_003.wav,帮我打开学校运行总览。,,False,False,10,10,1.0,0.5584,2.358,1.3168
+principal_004,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_004.wav,我想看一下今天的学校整体情况。,,False,False,14,14,1.0,0.411,3.128,1.2856
+principal_005,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_005.wav,打开校长驾驶舱里的学校运行总览页。,,False,False,16,16,1.0,0.3782,3.605,1.3631

@@ -69,6 +69,8 @@ def transcribe_file(cli_path, model_path, language, threads, row_id, file_path):
             "-t",
             str(threads),
             "-nt",
+            "-ng",
+            "-nfa",
             "-otxt",
             "-of",
             str(out_prefix),

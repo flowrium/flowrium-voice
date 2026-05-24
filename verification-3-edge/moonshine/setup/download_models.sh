@@ -36,8 +36,12 @@ metadata_path = Path(sys.argv[3])
 model_path, model_arch = get_model_for_language(language, None)
 model_path = Path(model_path)
 target_path = output_dir / model_path.name
-if not target_path.exists():
-    shutil.copy2(model_path, target_path)
+if model_path.is_dir():
+    if not target_path.exists():
+        shutil.copytree(model_path, target_path)
+else:
+    if not target_path.exists():
+        shutil.copy2(model_path, target_path)
 metadata_path.write_text(
     json.dumps(
         {
