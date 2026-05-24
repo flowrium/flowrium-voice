@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "api_url": "http://127.0.0.1:8001/v1/audio/transcriptions",
+    "model": "Qwen/Qwen3-ASR-1.7B",
+    "language": null,
+    "manifest_paths": [
+      "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv",
+      "/Users/lixiaofeng/Code/github/flowrium-voice/audio/humanized/manifest.csv",
+      "/Users/lixiaofeng/Code/github/flowrium-voice/audio/myvoice/manifest.csv"
+    ],
+    "tested_count": 0
+  },
+  "summary": {
+    "overall": {
+      "count": 0,
+      "passed": 0,
+      "norm_exact_match_rate": 0.0,
+      "cer": 0.0,
+      "avg_latency_ms": 0.0,
+      "p95_latency_ms": 0.0
+    },
+    "by_version": {},
+    "by_role": {},
+    "by_category": {},
+    "worst_cases": []
+  },
+  "results": [],
+  "report": {
+    "format": "asr-report-format/v1",
+    "engine": "Qwen3-ASR",
+    "config": {
+      "mode": "offline",
+      "hotwords_enabled": false,
+      "manifests": [
+        "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv",
+        "/Users/lixiaofeng/Code/github/flowrium-voice/audio/humanized/manifest.csv",
+        "/Users/lixiaofeng/Code/github/flowrium-voice/audio/myvoice/manifest.csv"
+      ],
+      "api_url": "http://127.0.0.1:8001/v1/audio/transcriptions",
+      "model": "Qwen/Qwen3-ASR-1.7B",
+      "language": null
+    },
+    "overall": {
+      "count": 0,
+      "passed": 0,
+      "norm_exact_match_rate": 0.0,
+      "cer": 0.0,
+      "avg_latency_ms": 0.0,
+      "p95_latency_ms": 0.0
+    },
+    "by_role": [],
+    "by_category": [],
+    "failed_cases": [],
+    "markdown": "## Qwen3-ASR Test Results\n\n**Config**: model=Qwen/Qwen3-ASR-1.7B, manifests=/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv, /Users/lixiaofeng/Code/github/flowrium-voice/audio/humanized/manifest.csv, /Users/lixiaofeng/Code/github/flowrium-voice/audio/myvoice/manifest.csv, api_url=http://127.0.0.1:8001/v1/audio/transcriptions\n\n### Overall\n| Metric | Value | Note |\n| --- | --- | --- |\n| 测试总数 (Count) | 0 | 共测试了多少条语音 |\n| 成功条数 (Passed) | 0 | 归一化后完全匹配的条数 |\n| **总体成功率 (Success Rate)** | **0.00%** | 按句统计：成功条数/总条数 |\n| CER (字符错误率) | 0.00% | 按字统计，辅助参考 |\n| 平均最终延迟 | 0.0ms | — |\n| P95 最终延迟 | 0.0ms | — |\n\n### By Role\n| Role | Count | 成功数 | **成功率** | CER |\n| --- | --- | --- | --- | --- |\n\n### By Category\n| Category | Count | **成功率** | CER |\n| --- | --- | --- | --- |\n\n### Failed Cases (top 8)\n| ID | Expected | Actual | CER |\n| --- | --- | --- | --- |\n| — | — | — | — |\n",
+    "markdown_path": "/Users/lixiaofeng/Code/github/flowrium-voice/verification-2-self/qwen3-asr/results/qwen3-asr-report.md"
+  }
+}

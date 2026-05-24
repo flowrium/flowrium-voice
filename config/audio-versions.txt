@@ -1,0 +1,3 @@
+# version|voice|rate|notes
+standard|Tingting|185|neutral pace, clear delivery
+humanized|Tingting|165|slower pace, natural pause

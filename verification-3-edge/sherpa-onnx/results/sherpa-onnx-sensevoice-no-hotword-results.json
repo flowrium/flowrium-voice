@@ -1,0 +1,177 @@
+{
+  "meta": {
+    "model": "sensevoice",
+    "hotwords": [],
+    "hotwords_enabled": false,
+    "manifest_paths": [
+      "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv",
+      "/Users/lixiaofeng/Code/github/flowrium-voice/audio/humanized/manifest.csv",
+      "/Users/lixiaofeng/Code/github/flowrium-voice/audio/myvoice/manifest.csv"
+    ],
+    "tested_count": 3
+  },
+  "summary": {
+    "overall": {
+      "count": 3,
+      "passed": 3,
+      "norm_exact_match_rate": 1.0,
+      "cer": 0.0,
+      "avg_rtf": 0.0625,
+      "p95_rtf": 0.0605
+    },
+    "by_version": {
+      "standard": {
+        "count": 3,
+        "passed": 3,
+        "norm_exact_match_rate": 1.0,
+        "cer": 0.0,
+        "avg_rtf": 0.0625,
+        "p95_rtf": 0.0605
+      }
+    },
+    "by_role": {
+      "principal": {
+        "count": 3,
+        "passed": 3,
+        "norm_exact_match_rate": 1.0,
+        "cer": 0.0,
+        "avg_rtf": 0.0625,
+        "p95_rtf": 0.0605
+      }
+    },
+    "by_category": {
+      "standard/principal": {
+        "count": 3,
+        "passed": 3,
+        "norm_exact_match_rate": 1.0,
+        "cer": 0.0,
+        "avg_rtf": 0.0625,
+        "p95_rtf": 0.0605
+      }
+    },
+    "worst_cases": [
+      {
+        "id": "principal_001",
+        "role": "principal",
+        "version": "standard",
+        "category": "standard/principal",
+        "file_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_001.wav",
+        "manifest_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv",
+        "expected": "打开学校今日运行数据大屏。",
+        "actual": "打开学校今日运行数据大屏",
+        "expected_norm": "打开学校今日运行数据大屏",
+        "actual_norm": "打开学校今日运行数据大屏",
+        "exact_match": false,
+        "norm_exact_match": true,
+        "char_distance": 0,
+        "expected_chars": 12,
+        "cer": 0.0,
+        "rtf": 0.0598,
+        "audio_duration_s": 2.838,
+        "inference_time_s": 0.1697
+      },
+      {
+        "id": "principal_002",
+        "role": "principal",
+        "version": "standard",
+        "category": "standard/principal",
+        "file_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_002.wav",
+        "manifest_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv",
+        "expected": "切换到校长驾驶舱首页。",
+        "actual": "切换到校长驾驶舱首页",
+        "expected_norm": "切换到校长驾驶舱首页",
+        "actual_norm": "切换到校长驾驶舱首页",
+        "exact_match": false,
+        "norm_exact_match": true,
+        "char_distance": 0,
+        "expected_chars": 10,
+        "cer": 0.0,
+        "rtf": 0.0605,
+        "audio_duration_s": 2.456,
+        "inference_time_s": 0.1485
+      },
+      {
+        "id": "principal_003",
+        "role": "principal",
+        "version": "standard",
+        "category": "standard/principal",
+        "file_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_003.wav",
+        "manifest_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv",
+        "expected": "帮我打开学校运行总览。",
+        "actual": "帮我打开学校运行总览",
+        "expected_norm": "帮我打开学校运行总览",
+        "actual_norm": "帮我打开学校运行总览",
+        "exact_match": false,
+        "norm_exact_match": true,
+        "char_distance": 0,
+        "expected_chars": 10,
+        "cer": 0.0,
+        "rtf": 0.0671,
+        "audio_duration_s": 2.358,
+        "inference_time_s": 0.1582
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "principal_001",
+      "role": "principal",
+      "version": "standard",
+      "category": "standard/principal",
+      "file_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_001.wav",
+      "manifest_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv",
+      "expected": "打开学校今日运行数据大屏。",
+      "actual": "打开学校今日运行数据大屏",
+      "expected_norm": "打开学校今日运行数据大屏",
+      "actual_norm": "打开学校今日运行数据大屏",
+      "exact_match": false,
+      "norm_exact_match": true,
+      "char_distance": 0,
+      "expected_chars": 12,
+      "cer": 0.0,
+      "rtf": 0.0598,
+      "audio_duration_s": 2.838,
+      "inference_time_s": 0.1697
+    },
+    {
+      "id": "principal_002",
+      "role": "principal",
+      "version": "standard",
+      "category": "standard/principal",
+      "file_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_002.wav",
+      "manifest_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv",
+      "expected": "切换到校长驾驶舱首页。",
+      "actual": "切换到校长驾驶舱首页",
+      "expected_norm": "切换到校长驾驶舱首页",
+      "actual_norm": "切换到校长驾驶舱首页",
+      "exact_match": false,
+      "norm_exact_match": true,
+      "char_distance": 0,
+      "expected_chars": 10,
+      "cer": 0.0,
+      "rtf": 0.0605,
+      "audio_duration_s": 2.456,
+      "inference_time_s": 0.1485
+    },
+    {
+      "id": "principal_003",
+      "role": "principal",
+      "version": "standard",
+      "category": "standard/principal",
+      "file_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_003.wav",
+      "manifest_path": "/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv",
+      "expected": "帮我打开学校运行总览。",
+      "actual": "帮我打开学校运行总览",
+      "expected_norm": "帮我打开学校运行总览",
+      "actual_norm": "帮我打开学校运行总览",
+      "exact_match": false,
+      "norm_exact_match": true,
+      "char_distance": 0,
+      "expected_chars": 10,
+      "cer": 0.0,
+      "rtf": 0.0671,
+      "audio_duration_s": 2.358,
+      "inference_time_s": 0.1582
+    }
+  ]
+}

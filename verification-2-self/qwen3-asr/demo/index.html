@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flowrium Voice - Qwen3-ASR 验证 Demo</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f3f4f6; color: #111827; }
+.page { max-width: 920px; margin: 0 auto; padding: 20px 16px 40px; }
+h1 { font-size: 24px; margin: 0 0 16px; }
+.panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 12px; box-shadow: 0 6px 18px rgba(17, 24, 39, 0.04); }
+.panel-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #374151; text-transform: uppercase; letter-spacing: 0.04em; }
+.row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.row:last-child { margin-bottom: 0; }
+label { font-size: 13px; color: #4b5563; }
+input[type="text"], input[type="password"] { flex: 1; min-width: 240px; padding: 9px 11px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; }
+button, .file-label { border: 0; border-radius: 8px; padding: 9px 14px; font-size: 14px; cursor: pointer; background: #111827; color: #fff; }
+button.secondary, .file-label.secondary { background: #e5e7eb; color: #111827; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+input[type="file"] { display: none; }
+.status { font-size: 13px; color: #6b7280; }
+.status.ok { color: #15803d; }
+.status.err { color: #b91c1c; }
+#results { min-height: 180px; border: 1px dashed #d1d5db; border-radius: 10px; padding: 12px; background: #f9fafb; }
+.result-item { padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+.result-item:last-child { border-bottom: 0; }
+.result-name { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+.result-text { font-size: 15px; line-height: 1.7; }
+.result-meta { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+.empty { color: #9ca3af; text-align: center; padding: 48px 0; }
+@media (max-width: 640px) {
+  h1 { font-size: 21px; }
+  button, .file-label, input[type="text"], input[type="password"] { width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Flowrium Voice - Qwen3-ASR 转写验证</h1>
+
+  <div class="panel">
+    <div class="panel-title">引擎配置</div>
+    <div class="row">
+      <label for="api-base">API Base</label>
+      <input id="api-base" type="text" placeholder="http://127.0.0.1:8001/v1">
+      <button onclick="checkService()">检测服务</button>
+    </div>
+    <div class="row">
+      <label for="model-name">模型名</label>
+      <input id="model-name" type="text" value="Qwen/Qwen3-ASR-1.7B">
+    </div>
+    <div class="row">
+      <label for="api-key">API Key</label>
+      <input id="api-key" type="password" placeholder="可留空">
+    </div>
+    <div class="row">
+      <div id="status" class="status">尚未检测服务</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">音频输入</div>
+    <div class="row">
+      <label class="file-label" for="file-input">选择音频文件</label>
+      <input id="file-input" type="file" accept=".wav,.mp3,.m4a,.webm,.ogg" multiple onchange="handleFiles(this.files)">
+      <button class="secondary" id="record-btn" onclick="toggleRecording()">开始录音</button>
+      <button class="secondary" onclick="clearResults()">清空结果</button>
+      <button class="secondary" onclick="exportSession()">导出记录</button>
+    </div>
+    <div class="row">
+      <div id="progress" class="status">支持上传 wav/mp3/m4a/webm/ogg，也可以先录音再提交。</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">转写结果</div>
+    <div id="results"><div class="empty">等待上传音频或开始录音…</div></div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_API_BASE = window.location.origin + "/v1";
+const state = {
+  records: [],
+  mediaRecorder: null,
+  mediaChunks: [],
+  recording: false,
+};
+
+document.getElementById("api-base").value = DEFAULT_API_BASE;
+
+function setStatus(message, kind = "") {
+  const el = document.getElementById("status");
+  el.className = kind ? `status ${kind}` : "status";
+  el.textContent = message;
+}
+
+function setProgress(message) {
+  document.getElementById("progress").textContent = message;
+}
+
+function apiBase() {
+  return document.getElementById("api-base").value.trim().replace(/\/$/, "");
+}
+
+function modelName() {
+  return document.getElementById("model-name").value.trim() || "Qwen/Qwen3-ASR-1.7B";
+}
+
+function authHeaders() {
+  const key = document.getElementById("api-key").value.trim();
+  return key ? { Authorization: `Bearer ${key}` } : {};
+}
+
+async function checkService() {
+  setStatus("检测中…");
+  try {
+    const resp = await fetch(apiBase() + "/models", {
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const payload = await resp.json();
+    const names = (payload.data || []).map(item => item.id).join(", ") || "服务已响应";
+    setStatus(`服务可用: ${names}`, "ok");
+  } catch (err) {
+    setStatus(`连接失败: ${err.message}`, "err");
+  }
+}
+
+async function transcribeBlob(blob, name) {
+  const form = new FormData();
+  form.append("model", modelName());
+  form.append("file", blob, name);
+
+  const resp = await fetch(apiBase() + "/audio/transcriptions", {
+    method: "POST",
+    body: form,
+    headers: authHeaders(),
+    signal: AbortSignal.timeout(300000),
+  });
+  if (!resp.ok) {
+    const body = await resp.text();
+    throw new Error(`HTTP ${resp.status}: ${body.slice(0, 200)}`);
+  }
+  return await resp.json();
+}
+
+function ensureResultsPanel() {
+  const container = document.getElementById("results");
+  const empty = container.querySelector(".empty");
+  if (empty) empty.remove();
+  return container;
+}
+
+function addRecord(name, text, meta) {
+  const container = ensureResultsPanel();
+  const item = document.createElement("div");
+  item.className = "result-item";
+  item.innerHTML = `
+    <div class="result-name">${escapeHtml(name)}</div>
+    <div class="result-text">${escapeHtml(text || "(空结果)")}</div>
+    <div class="result-meta">${escapeHtml(meta)}</div>
+  `;
+  container.prepend(item);
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[ch]));
+}
+
+async function handleFiles(files) {
+  if (!files || !files.length) return;
+  setProgress(`开始处理 ${files.length} 个文件…`);
+  for (let i = 0; i < files.length; i += 1) {
+    const file = files[i];
+    try {
+      const startedAt = performance.now();
+      const payload = await transcribeBlob(file, file.name);
+      const latency = Math.round(performance.now() - startedAt);
+      const text = payload.text || "";
+      state.records.push({
+        file_name: file.name,
+        text,
+        latency_ms: latency,
+        response: payload,
+        recorded_at: new Date().toISOString(),
+      });
+      addRecord(file.name, text, `latency=${latency}ms`);
+      setProgress(`已完成 ${i + 1}/${files.length}`);
+    } catch (err) {
+      addRecord(file.name, "", `ERROR: ${err.message}`);
+      setProgress(`第 ${i + 1} 个文件失败: ${err.message}`);
+    }
+  }
+}
+
+async function toggleRecording() {
+  if (state.recording) {
+    state.mediaRecorder.stop();
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    state.mediaChunks = [];
+    state.mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    state.mediaRecorder.ondataavailable = event => {
+      if (event.data.size > 0) state.mediaChunks.push(event.data);
+    };
+    state.mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(track => track.stop());
+      state.recording = false;
+      document.getElementById("record-btn").textContent = "开始录音";
+      const blob = new Blob(state.mediaChunks, { type: "audio/webm" });
+      setProgress("录音完成，正在转写…");
+      try {
+        const startedAt = performance.now();
+        const payload = await transcribeBlob(blob, "recording.webm");
+        const latency = Math.round(performance.now() - startedAt);
+        const text = payload.text || "";
+        state.records.push({
+          file_name: "recording.webm",
+          text,
+          latency_ms: latency,
+          response: payload,
+          recorded_at: new Date().toISOString(),
+        });
+        addRecord("recording.webm", text, `latency=${latency}ms`);
+        setProgress("录音转写完成");
+      } catch (err) {
+        addRecord("recording.webm", "", `ERROR: ${err.message}`);
+        setProgress(`录音转写失败: ${err.message}`);
+      }
+    };
+    state.mediaRecorder.start();
+    state.recording = true;
+    document.getElementById("record-btn").textContent = "停止录音";
+    setProgress("录音中… 再次点击可停止并上传");
+  } catch (err) {
+    setProgress(`无法开始录音: ${err.message}`);
+  }
+}
+
+function clearResults() {
+  state.records = [];
+  document.getElementById("results").innerHTML = '<div class="empty">等待上传音频或开始录音…</div>';
+  setProgress("结果已清空");
+}
+
+function exportSession() {
+  const blob = new Blob([JSON.stringify(state.records, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `qwen3-asr-session-${Date.now()}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flowrium Voice - SenseVoice 转写验证 Demo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 16px; max-width: 800px; margin: 0 auto; }
+h1 { font-size: 20px; margin-bottom: 12px; color: #1a1a1a; }
+.panel { background: #fff; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.panel-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #555; }
+.row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.row:last-child { margin-bottom: 0; }
+input[type="text"], select { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+button { padding: 6px 14px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; font-size: 13px; cursor: pointer; white-space: nowrap; }
+button:hover { background: #eee; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.primary { background: #1677ff; color: #fff; border-color: #1677ff; }
+button.primary:hover { background: #0958d9; }
+button.danger { background: #ff4d4f; color: #fff; border-color: #ff4d4f; }
+button.danger:hover { background: #d9363e; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.status-dot.ok { background: #52c41a; }
+.status-dot.err { background: #ff4d4f; }
+.status-dot.idle { background: #999; }
+.status-text { font-size: 12px; color: #666; }
+#result-area { max-height: 500px; overflow-y: auto; border: 1px solid #e8e8e8; border-radius: 4px; padding: 10px; font-size: 14px; line-height: 1.8; background: #fafafa; }
+.result-item { border-bottom: 1px solid #eee; padding: 8px 0; }
+.result-item:last-child { border-bottom: none; }
+.result-file { font-size: 12px; color: #999; margin-bottom: 2px; }
+.result-clean { color: #1a1a1a; }
+.result-labeled { font-size: 12px; color: #888; margin-top: 2px; }
+.result-tags { display: inline-flex; gap: 4px; margin-left: 8px; }
+.tag { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 11px; }
+.tag-lang { background: #e6f4ff; color: #1677ff; border: 1px solid #91caff; }
+.tag-emotion { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.tag-error { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+.loading { color: #999; }
+.loading::after { content: ""; animation: dots 1.5s steps(4, end) infinite; }
+@keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+.recording-indicator { display: inline-block; width: 10px; height: 10px; background: #ff4d4f; border-radius: 50%; margin-right: 6px; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.file-input-label { padding: 6px 14px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.file-input-label:hover { background: #eee; }
+input[type="file"] { display: none; }
+.action-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+.empty-result { color: #bbb; text-align: center; padding: 40px 0; }
+.progress-info { font-size: 12px; color: #999; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Flowrium Voice - SenseVoice 转写验证</h1>
+
+<!-- Engine Config Panel -->
+<div class="panel">
+  <div class="panel-title">引擎配置</div>
+  <div class="row">
+    <label style="font-size:13px;white-space:nowrap;">API 地址</label>
+    <input type="text" id="api-url" value="" placeholder="http://host:port">
+    <button id="btn-check" class="primary" onclick="checkService()">检测</button>
+  </div>
+  <div class="row">
+    <label style="font-size:13px;white-space:nowrap;">语言</label>
+    <select id="language">
+      <option value="auto" selected>自动检测</option>
+      <option value="zh">中文 (zh)</option>
+      <option value="en">英文 (en)</option>
+      <option value="ja">日文 (ja)</option>
+      <option value="ko">韩文 (ko)</option>
+      <option value="yue">粤语 (yue)</option>
+    </select>
+  </div>
+  <div class="row">
+    <span class="status-dot idle" id="status-dot"></span>
+    <span class="status-text" id="status-text">未检测</span>
+  </div>
+</div>
+
+<!-- Audio Input Panel -->
+<div class="panel">
+  <div class="panel-title">音频输入</div>
+  <div class="row">
+    <button id="btn-record" class="primary" onclick="toggleRecording()">开始录音</button>
+    <span id="recording-indicator" style="display:none;"><span class="recording-indicator"></span>录音中</span>
+    <span id="recording-time" class="status-text"></span>
+  </div>
+  <div class="row">
+    <label class="file-input-label">
+      选择音频文件（支持多选）
+      <input type="file" id="file-input" accept=".wav,.mp3,.m4a" multiple onchange="handleUpload(this)">
+    </label>
+    <span style="font-size:12px;color:#999;">支持 wav/mp3/m4a</span>
+  </div>
+  <div id="progress-info" class="progress-info"></div>
+</div>
+
+<!-- Result Panel -->
+<div class="panel">
+  <div class="panel-title">转写结果</div>
+  <div id="result-area"><div class="empty-result">等待音频上传...</div></div>
+</div>
+
+<!-- Action Bar -->
+<div class="panel">
+  <div class="action-bar">
+    <button onclick="clearResults()">清空结果</button>
+    <button onclick="copyAll()">复制全部</button>
+    <button onclick="exportSession()">导出记录</button>
+  </div>
+</div>
+
+<script>
+let sessionRecords = [];
+let isProcessing = false;
+let isRecording = false;
+let mediaStream = null;
+let audioContext = null;
+let scriptProcessor = null;
+let recordedChunks = [];
+let recordingStartAt = 0;
+let recordingTimer = null;
+let recordingSampleRate = 44100;
+
+const LABEL_RE = /<\|([^|]+)\|>/g;
+const DEFAULT_API_URL = window.location.protocol.startsWith('http')
+  ? window.location.origin
+  : 'http://127.0.0.1:8000';
+const TARGET_SAMPLE_RATE = 16000;
+
+document.getElementById('api-url').value = DEFAULT_API_URL;
+
+function parseLabelResult(labelResult) {
+  if (!labelResult) return { clean: '', lang: null, emotion: null };
+  const tags = [...labelResult.matchAll(LABEL_RE)].map(m => m[1]);
+  if (tags.length === 0) return { clean: labelResult, lang: null, emotion: null };
+  const clean = labelResult.replace(LABEL_RE, '');
+  const lang = tags[0] || null;
+  const emotion = tags[1] || null;
+  return { clean, lang, emotion };
+}
+
+async function checkService() {
+  const url = document.getElementById('api-url').value.trim();
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  dot.className = 'status-dot idle';
+  text.textContent = '检测中...';
+  try {
+    const resp = await fetch(url + '/docs', { method: 'GET', signal: AbortSignal.timeout(5000) });
+    if (resp.ok) {
+      dot.className = 'status-dot ok';
+      text.textContent = '服务可用';
+    } else {
+      dot.className = 'status-dot err';
+      text.textContent = '服务响应异常: ' + resp.status;
+    }
+  } catch (e) {
+    dot.className = 'status-dot err';
+    text.textContent = '无法连接: ' + e.message;
+  }
+}
+
+async function transcribeFile(file, apiUrl, language) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('language', language);
+
+  const resp = await fetch(apiUrl + '/extract_text', {
+    method: 'POST',
+    body: formData,
+    signal: AbortSignal.timeout(120000),
+  });
+
+  if (!resp.ok) {
+    throw new Error('API error: ' + resp.status);
+  }
+  return await resp.json();
+}
+
+function toggleRecording() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+async function startRecording() {
+  if (isProcessing) {
+    alert('当前还有音频在处理中，请稍后再试');
+    return;
+  }
+
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+      }
+    });
+  } catch (e) {
+    alert('无法访问麦克风: ' + e.message);
+    return;
+  }
+
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  recordingSampleRate = audioContext.sampleRate;
+  const source = audioContext.createMediaStreamSource(mediaStream);
+  scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+  recordedChunks = [];
+
+  scriptProcessor.onaudioprocess = (event) => {
+    if (!isRecording) return;
+    const inputData = event.inputBuffer.getChannelData(0);
+    recordedChunks.push(new Float32Array(inputData));
+  };
+
+  source.connect(scriptProcessor);
+  scriptProcessor.connect(audioContext.destination);
+
+  isRecording = true;
+  recordingStartAt = Date.now();
+  updateRecordingUi();
+  recordingTimer = window.setInterval(updateRecordingUi, 200);
+}
+
+async function stopRecording() {
+  if (!isRecording) return;
+
+  isRecording = false;
+  teardownRecorder();
+  updateRecordingUi();
+
+  if (recordedChunks.length === 0) {
+    alert('没有录到音频，请重试');
+    return;
+  }
+
+  const apiUrl = document.getElementById('api-url').value.trim();
+  if (!apiUrl) {
+    alert('请输入 API 地址');
+    return;
+  }
+
+  const language = document.getElementById('language').value;
+  const progressEl = document.getElementById('progress-info');
+  const emptyEl = document.getElementById('result-area').querySelector('.empty-result');
+  if (emptyEl) emptyEl.remove();
+
+  const durationMs = Math.max(1, Date.now() - recordingStartAt);
+  const itemEl = addResultItem(`recording-${new Date().toISOString().slice(11, 19).replace(/:/g, '')}.wav`, {
+    loading: true,
+  });
+
+  isProcessing = true;
+  progressEl.textContent = '处理中（录音）...';
+
+  try {
+    const wavBlob = buildWavBlob(recordedChunks, recordingSampleRate, TARGET_SAMPLE_RATE);
+    const file = new File([wavBlob], 'recording.wav', { type: 'audio/wav' });
+    const startTime = performance.now();
+    const result = await transcribeFile(file, apiUrl, language);
+    const latency = Math.round(performance.now() - startTime);
+    const parsed = parseLabelResult(result.label_result);
+    const cleanText = result.results || parsed.clean || '';
+    updateResultItem(itemEl, `麦克风录音 · ${Math.round(durationMs / 100) / 10}s`, {
+      clean: cleanText,
+      labeled: result.label_result || '',
+      lang: parsed.lang,
+      emotion: parsed.emotion,
+      latency,
+    });
+    sessionRecords.push({
+      timestamp: new Date().toISOString(),
+      file: 'microphone-recording.wav',
+      source: 'microphone',
+      duration_ms: durationMs,
+      clean: cleanText,
+      labeled: result.label_result || '',
+      language_param: language,
+      language_detected: parsed.lang,
+      emotion_detected: parsed.emotion,
+      latency_ms: latency,
+    });
+  } catch (e) {
+    updateResultItem(itemEl, '麦克风录音', { error: e.message });
+  } finally {
+    progressEl.textContent = '';
+    isProcessing = false;
+    recordedChunks = [];
+  }
+}
+
+function teardownRecorder() {
+  if (recordingTimer) {
+    clearInterval(recordingTimer);
+    recordingTimer = null;
+  }
+  if (scriptProcessor) {
+    scriptProcessor.disconnect();
+    scriptProcessor = null;
+  }
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+    mediaStream = null;
+  }
+  if (audioContext) {
+    audioContext.close();
+    audioContext = null;
+  }
+}
+
+function updateRecordingUi() {
+  const btn = document.getElementById('btn-record');
+  const indicator = document.getElementById('recording-indicator');
+  const timeEl = document.getElementById('recording-time');
+
+  if (isRecording) {
+    btn.textContent = '停止录音';
+    btn.className = 'danger';
+    indicator.style.display = 'inline';
+    const elapsed = Math.max(0, Date.now() - recordingStartAt);
+    const seconds = Math.floor(elapsed / 1000);
+    const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const remain = String(seconds % 60).padStart(2, '0');
+    timeEl.textContent = `${minutes}:${remain}`;
+  } else {
+    btn.textContent = '开始录音';
+    btn.className = 'primary';
+    indicator.style.display = 'none';
+    timeEl.textContent = '';
+  }
+}
+
+function buildWavBlob(chunks, sourceSampleRate, targetSampleRate) {
+  const merged = mergeFloat32Chunks(chunks);
+  const pcm = sourceSampleRate === targetSampleRate
+    ? float32ToInt16(merged)
+    : float32ToInt16(resampleFloat32(merged, sourceSampleRate, targetSampleRate));
+  const wav = encodeWav(pcm, targetSampleRate);
+  return new Blob([wav], { type: 'audio/wav' });
+}
+
+function mergeFloat32Chunks(chunks) {
+  let totalLength = 0;
+  for (const chunk of chunks) totalLength += chunk.length;
+  const merged = new Float32Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return merged;
+}
+
+function resampleFloat32(inputData, sourceSampleRate, targetSampleRate) {
+  const ratio = sourceSampleRate / targetSampleRate;
+  const outputLength = Math.max(1, Math.round(inputData.length / ratio));
+  const output = new Float32Array(outputLength);
+  for (let i = 0; i < outputLength; i++) {
+    const sourceIndex = i * ratio;
+    const left = Math.floor(sourceIndex);
+    const right = Math.min(left + 1, inputData.length - 1);
+    const fraction = sourceIndex - left;
+    output[i] = inputData[left] * (1 - fraction) + inputData[right] * fraction;
+  }
+  return output;
+}
+
+function float32ToInt16(float32Array) {
+  const int16 = new Int16Array(float32Array.length);
+  for (let i = 0; i < float32Array.length; i++) {
+    const sample = Math.max(-1, Math.min(1, float32Array[i]));
+    int16[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  }
+  return int16;
+}
+
+function encodeWav(int16Samples, sampleRate) {
+  const header = new ArrayBuffer(44);
+  const view = new DataView(header);
+  const dataLength = int16Samples.length * 2;
+
+  writeAscii(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataLength, true);
+  writeAscii(view, 8, 'WAVE');
+  writeAscii(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeAscii(view, 36, 'data');
+  view.setUint32(40, dataLength, true);
+
+  return new Blob([header, int16Samples.buffer], { type: 'audio/wav' });
+}
+
+function writeAscii(view, offset, text) {
+  for (let i = 0; i < text.length; i++) {
+    view.setUint8(offset + i, text.charCodeAt(i));
+  }
+}
+
+async function handleUpload(input) {
+  if (!input.files || input.files.length === 0) return;
+
+  const apiUrl = document.getElementById('api-url').value.trim();
+  if (!apiUrl) return alert('请输入 API 地址');
+
+  const language = document.getElementById('language').value;
+  const files = Array.from(input.files);
+  const progressEl = document.getElementById('progress-info');
+
+  const emptyEl = document.getElementById('result-area').querySelector('.empty-result');
+  if (emptyEl) emptyEl.remove();
+
+  isProcessing = true;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['wav', 'mp3', 'm4a'].includes(ext)) {
+      addResultItem(file.name, { error: '不支持的格式: ' + ext });
+      continue;
+    }
+
+    progressEl.textContent = `处理中 (${i + 1}/${files.length}): ${file.name}`;
+    const itemEl = addResultItem(file.name, { loading: true });
+
+    try {
+      const startTime = performance.now();
+      const result = await transcribeFile(file, apiUrl, language);
+      const latency = Math.round(performance.now() - startTime);
+      const parsed = parseLabelResult(result.label_result);
+      const cleanText = result.results || parsed.clean || '';
+      updateResultItem(itemEl, file.name, {
+        clean: cleanText,
+        labeled: result.label_result || '',
+        lang: parsed.lang,
+        emotion: parsed.emotion,
+        latency,
+      });
+      sessionRecords.push({
+        timestamp: new Date().toISOString(),
+        file: file.name,
+        clean: cleanText,
+        labeled: result.label_result || '',
+        language_param: language,
+        language_detected: parsed.lang,
+        emotion_detected: parsed.emotion,
+        latency_ms: latency,
+      });
+    } catch (e) {
+      updateResultItem(itemEl, file.name, { error: e.message });
+    }
+  }
+
+  progressEl.textContent = '';
+  isProcessing = false;
+  input.value = '';
+}
+
+function addResultItem(fileName, data) {
+  const container = document.getElementById('result-area');
+  const el = document.createElement('div');
+  el.className = 'result-item';
+
+  if (data.loading) {
+    el.innerHTML = `<div class="result-file">${esc(fileName)}</div><div class="loading">处理中</div>`;
+  } else if (data.error) {
+    el.innerHTML = `<div class="result-file">${esc(fileName)}</div><div class="result-clean" style="color:#ff4d4f">${esc(data.error)}</div>`;
+  }
+
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+  return el;
+}
+
+function updateResultItem(el, fileName, data) {
+  if (data.error) {
+    el.innerHTML = `<div class="result-file">${esc(fileName)}</div><div class="result-clean" style="color:#ff4d4f">${esc(data.error)}</div>`;
+    return;
+  }
+
+  let tags = '';
+  if (data.lang) tags += `<span class="tag tag-lang">${esc(data.lang)}</span>`;
+  if (data.emotion) tags += `<span class="tag tag-emotion">${esc(data.emotion)}</span>`;
+
+  el.innerHTML = `
+    <div class="result-file">${esc(fileName)}${data.latency ? ` · ${data.latency}ms` : ''}</div>
+    <div class="result-clean">${esc(data.clean)}${tags ? `<span class="result-tags">${tags}</span>` : ''}</div>
+    ${data.labeled ? `<div class="result-labeled">${esc(data.labeled)}</div>` : ''}
+  `;
+}
+
+function clearResults() {
+  const container = document.getElementById('result-area');
+  container.innerHTML = '<div class="empty-result">等待音频上传...</div>';
+  sessionRecords = [];
+}
+
+function copyAll() {
+  const texts = sessionRecords.map(r => r.clean).filter(Boolean);
+  if (texts.length === 0) return alert('没有可复制的转写结果');
+  navigator.clipboard.writeText(texts.join('\n')).then(() => alert('已复制到剪贴板'));
+}
+
+function exportSession() {
+  if (sessionRecords.length === 0) return alert('没有可导出的记录');
+  const exportData = {
+    export_time: new Date().toISOString(),
+    engine: 'sensevoice',
+    api_url: document.getElementById('api-url').value,
+    language: document.getElementById('language').value,
+    records: sessionRecords,
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sensevoice-session-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>

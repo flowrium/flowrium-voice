@@ -1,0 +1,50 @@
+{
+  "label": "smoke-paraformer",
+  "model": "paraformer",
+  "command": "python3 /Users/lixiaofeng/Code/github/flowrium-voice/verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model paraformer --limit 5",
+  "environment": {
+    "platform": "macOS-26.3-x86_64-i386-64bit",
+    "macos_version": "26.3",
+    "machine": "x86_64",
+    "cpu": "i386"
+  },
+  "performance": {
+    "wall_time_s": 5.89,
+    "user_time_s": 7.26,
+    "sys_time_s": 0.55,
+    "max_rss_mb": null
+  },
+  "accuracy": {
+    "overall": {
+      "count": 5,
+      "passed": 5,
+      "norm_exact_match_rate": 1.0,
+      "cer": 0.0,
+      "avg_rtf": 0.0461,
+      "p95_rtf": 0.0477
+    },
+    "by_role": {
+      "principal": {
+        "count": 5,
+        "passed": 5,
+        "norm_exact_match_rate": 1.0,
+        "cer": 0.0,
+        "avg_rtf": 0.0461,
+        "p95_rtf": 0.0477
+      }
+    },
+    "by_version": {
+      "standard": {
+        "count": 5,
+        "passed": 5,
+        "norm_exact_match_rate": 1.0,
+        "cer": 0.0,
+        "avg_rtf": 0.0461,
+        "p95_rtf": 0.0477
+      }
+    },
+    "worst_cases": []
+  },
+  "source_result_json": "/Users/lixiaofeng/Code/github/flowrium-voice/verification-3-edge/sherpa-onnx/results/sherpa-onnx-paraformer-no-hotword-results.json",
+  "source_time_txt": "/Users/lixiaofeng/Code/github/flowrium-voice/verification-3-edge/sherpa-onnx/benchmarks/apple/results/smoke-paraformer.time.txt"
+}

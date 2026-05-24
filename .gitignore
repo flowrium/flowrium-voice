@@ -33,3 +33,5 @@ models/*.pt
 # Env
 .env
 .env.local
+.venv/
+.venv-xtts/

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flowrium Voice - 转写验证 Demo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 16px; max-width: 800px; margin: 0 auto; }
+h1 { font-size: 20px; margin-bottom: 12px; color: #1a1a1a; }
+.panel { background: #fff; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.panel-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #555; }
+.row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.row:last-child { margin-bottom: 0; }
+input[type="text"], select { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+button { padding: 6px 14px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; font-size: 13px; cursor: pointer; white-space: nowrap; }
+button:hover { background: #eee; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.primary { background: #1677ff; color: #fff; border-color: #1677ff; }
+button.primary:hover { background: #0958d9; }
+button.danger { background: #ff4d4f; color: #fff; border-color: #ff4d4f; }
+button.danger:hover { background: #d9363e; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.status-dot.connected { background: #52c41a; }
+.status-dot.disconnected { background: #999; }
+.status-dot.error { background: #ff4d4f; }
+.status-text { font-size: 12px; color: #666; }
+#result-area { height: 300px; overflow-y: auto; border: 1px solid #e8e8e8; border-radius: 4px; padding: 10px; font-size: 14px; line-height: 1.8; background: #fafafa; }
+.partial { color: #999; }
+.partial::after { content: "_"; animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.final { color: #1a1a1a; }
+.hotword-tag { display: inline-block; padding: 2px 8px; background: #e6f4ff; border: 1px solid #91caff; border-radius: 12px; font-size: 12px; margin: 2px; }
+.hotword-tag .remove { cursor: pointer; margin-left: 4px; color: #999; }
+.hotword-tag .remove:hover { color: #ff4d4f; }
+.recording-indicator { display: inline-block; width: 10px; height: 10px; background: #ff4d4f; border-radius: 50%; margin-right: 6px; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.file-input-label { padding: 6px 14px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.file-input-label:hover { background: #eee; }
+input[type="file"] { display: none; }
+.action-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+.empty-result { color: #bbb; text-align: center; padding: 40px 0; }
+</style>
+</head>
+<body>
+
+<h1>Flowrium Voice - 转写验证 Demo</h1>
+
+<!-- Connection Panel -->
+<div class="panel">
+  <div class="panel-title">连接配置</div>
+  <div class="row">
+    <label style="font-size:13px;white-space:nowrap;">引擎地址</label>
+    <input type="text" id="ws-url" value="ws://localhost:10095" placeholder="ws://host:port">
+    <button id="btn-connect" class="primary" onclick="toggleConnection()">连接</button>
+  </div>
+  <div class="row">
+    <label style="font-size:13px;white-space:nowrap;">模式</label>
+    <select id="asr-mode">
+      <option value="2pass" selected>2pass (推荐)</option>
+      <option value="online">online (纯实时)</option>
+      <option value="offline">offline (离线)</option>
+    </select>
+  </div>
+  <div class="row">
+    <span class="status-dot disconnected" id="status-dot"></span>
+    <span class="status-text" id="status-text">未连接</span>
+  </div>
+</div>
+
+<!-- Audio Input Panel -->
+<div class="panel">
+  <div class="panel-title">音频输入</div>
+  <div class="row">
+    <button id="btn-record" class="primary" onclick="toggleRecording()" disabled>开始录音</button>
+    <span id="recording-indicator" style="display:none;"><span class="recording-indicator"></span>录音中</span>
+    <label class="file-input-label">
+      上传音频文件
+      <input type="file" id="file-input" accept=".wav,.mp3,.m4a,.pcm" onchange="handleFileUpload(this)" disabled>
+    </label>
+    <span style="font-size:12px;color:#999;">支持 wav/mp3/m4a</span>
+  </div>
+</div>
+
+<!-- Result Panel -->
+<div class="panel">
+  <div class="panel-title">转写结果</div>
+  <div id="result-area"><div class="empty-result">等待音频输入...</div></div>
+</div>
+
+<!-- Hotword Panel -->
+<div class="panel">
+  <div class="panel-title">热词管理</div>
+  <div class="row">
+    <input type="text" id="hotword-input" placeholder="输入热词" onkeydown="if(event.key==='Enter')addHotword()">
+    <button onclick="addHotword()">添加</button>
+    <button onclick="loadPresetHotwords()">加载预设</button>
+    <button onclick="clearHotwords()">清空</button>
+  </div>
+  <div id="hotword-list"></div>
+</div>
+
+<!-- Action Bar -->
+<div class="panel">
+  <div class="action-bar">
+    <button onclick="clearResults()">清空结果</button>
+    <button onclick="copyAll()">复制全部</button>
+    <button onclick="exportSession()">导出记录</button>
+  </div>
+</div>
+
+<script>
+// === State ===
+let ws = null;
+let audioContext = null;
+let mediaStream = null;
+let scriptProcessor = null;
+let isRecording = false;
+let isConnected = false;
+let hotwords = [];
+let sessionRecords = [];
+let currentPartialEl = null;
+
+const CHUNK_SIZE = [5, 10, 5];
+const CHUNK_INTERVAL = 10;
+const SAMPLE_RATE = 16000;
+const STRIDE = Math.floor(60 * CHUNK_SIZE[1] / CHUNK_INTERVAL / 1000 * SAMPLE_RATE * 2); // ~1920 bytes
+
+// === Connection ===
+function toggleConnection() {
+  if (isConnected) {
+    disconnect();
+  } else {
+    connect();
+  }
+}
+
+function connect() {
+  const url = document.getElementById('ws-url').value.trim();
+  if (!url) return alert('请输入 WebSocket 地址');
+  setConnectionState('connecting');
+  try {
+    ws = new WebSocket(url);
+  } catch (e) {
+    setConnectionState('error', e.message);
+    return;
+  }
+  ws.binaryType = 'arraybuffer';
+  ws.onopen = () => {
+    setConnectionState('connected');
+    sendConfig();
+  };
+  ws.onmessage = (e) => {
+    if (typeof e.data === 'string') {
+      handleResult(JSON.parse(e.data));
+    }
+  };
+  ws.onclose = () => {
+    if (isRecording) stopRecording();
+    setConnectionState('disconnected');
+  };
+  ws.onerror = () => {
+    setConnectionState('error');
+  };
+}
+
+function disconnect() {
+  if (ws) {
+    ws.close();
+    ws = null;
+  }
+  if (isRecording) stopRecording();
+  setConnectionState('disconnected');
+}
+
+function sendConfig() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  const mode = document.getElementById('asr-mode').value;
+  const hotwordsStr = buildHotwordsString();
+  const msg = {
+    mode: mode,
+    chunk_size: CHUNK_SIZE,
+    chunk_interval: CHUNK_INTERVAL,
+    encoder_chunk_look_back: 4,
+    decoder_chunk_look_back: 1,
+    wav_name: 'demo',
+    is_speaking: true,
+    itn: true,
+  };
+  if (hotwordsStr) {
+    msg.hotwords = hotwordsStr;
+  }
+  ws.send(JSON.stringify(msg));
+}
+
+function buildHotwordsString() {
+  if (hotwords.length === 0) return '';
+  const dict = {};
+  hotwords.forEach(w => { dict[w] = Math.min(20 + w.length * 25, 300); });
+  return JSON.stringify(dict);
+}
+
+function setConnectionState(state, errorMsg) {
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  const btn = document.getElementById('btn-connect');
+  const btnRecord = document.getElementById('btn-record');
+  const fileInput = document.getElementById('file-input');
+
+  dot.className = 'status-dot';
+  if (state === 'connected') {
+    dot.classList.add('connected');
+    text.textContent = '已连接 ' + document.getElementById('ws-url').value;
+    btn.textContent = '断开';
+    btn.className = 'danger';
+    btnRecord.disabled = false;
+    fileInput.disabled = false;
+    isConnected = true;
+  } else if (state === 'connecting') {
+    dot.classList.add('disconnected');
+    text.textContent = '连接中...';
+    btn.disabled = true;
+    isConnected = false;
+  } else if (state === 'error') {
+    dot.classList.add('error');
+    text.textContent = '连接失败' + (errorMsg ? ': ' + errorMsg : '');
+    btn.textContent = '连接';
+    btn.className = 'primary';
+    btn.disabled = false;
+    btnRecord.disabled = true;
+    fileInput.disabled = true;
+    isConnected = false;
+  } else {
+    dot.classList.add('disconnected');
+    text.textContent = '未连接';
+    btn.textContent = '连接';
+    btn.className = 'primary';
+    btn.disabled = false;
+    btnRecord.disabled = true;
+    fileInput.disabled = true;
+    isConnected = false;
+  }
+}
+
+// === Recording ===
+function toggleRecording() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+async function startRecording() {
+  if (!isConnected) return alert('请先连接 ASR 服务');
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: { sampleRate: SAMPLE_RATE, channelCount: 1, echoCancellation: true }
+    });
+  } catch (e) {
+    alert('无法访问麦克风: ' + e.message);
+    return;
+  }
+
+  audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
+  const source = audioContext.createMediaStreamSource(mediaStream);
+
+  // Resample to 16kHz if needed using OfflineAudioContext is complex,
+  // so we use ScriptProcessor and resample manually
+  scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+  scriptProcessor.onaudioprocess = (e) => {
+    if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
+    const inputData = e.inputBuffer.getChannelData(0);
+    // Resample to 16kHz if source rate differs
+    const pcmData = resampleTo16k(inputData, audioContext.sampleRate);
+    if (pcmData.length > 0) {
+      ws.send(pcmData.buffer);
+    }
+  };
+
+  source.connect(scriptProcessor);
+  scriptProcessor.connect(audioContext.destination);
+
+  isRecording = true;
+  document.getElementById('btn-record').textContent = '停止录音';
+  document.getElementById('btn-record').className = 'danger';
+  document.getElementById('recording-indicator').style.display = 'inline';
+  sendConfig();
+}
+
+function stopRecording() {
+  isRecording = false;
+  if (scriptProcessor) {
+    scriptProcessor.disconnect();
+    scriptProcessor = null;
+  }
+  if (audioContext) {
+    audioContext.close();
+    audioContext = null;
+  }
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+  // Send end-of-speech signal
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ is_speaking: false }));
+  }
+  document.getElementById('btn-record').textContent = '开始录音';
+  document.getElementById('btn-record').className = 'primary';
+  document.getElementById('recording-indicator').style.display = 'none';
+}
+
+function resampleTo16k(inputData, sourceSampleRate) {
+  if (sourceSampleRate === SAMPLE_RATE) {
+    return float32ToInt16(inputData);
+  }
+  const ratio = sourceSampleRate / SAMPLE_RATE;
+  const newLength = Math.round(inputData.length / ratio);
+  const result = new Float32Array(newLength);
+  for (let i = 0; i < newLength; i++) {
+    const srcIdx = i * ratio;
+    const idx = Math.floor(srcIdx);
+    const frac = srcIdx - idx;
+    if (idx + 1 < inputData.length) {
+      result[i] = inputData[idx] * (1 - frac) + inputData[idx + 1] * frac;
+    } else {
+      result[i] = inputData[idx] || 0;
+    }
+  }
+  return float32ToInt16(result);
+}
+
+function float32ToInt16(float32Array) {
+  const int16Array = new Int16Array(float32Array.length);
+  for (let i = 0; i < float32Array.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32Array[i]));
+    int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+  return int16Array;
+}
+
+// === File Upload ===
+async function handleFileUpload(input) {
+  if (!input.files || input.files.length === 0) return;
+  if (!isConnected) return alert('请先连接 ASR 服务');
+  const file = input.files[0];
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['wav', 'mp3', 'm4a', 'pcm'].includes(ext)) {
+    alert('不支持的格式: ' + ext + '，请使用 wav/mp3/m4a');
+    input.value = '';
+    return;
+  }
+
+  const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE });
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    // Get mono channel
+    const channelData = audioBuffer.getChannelData(0);
+    const pcmData = float32ToInt16(channelData);
+    sendConfig();
+    // Send in chunks
+    const chunkBytes = STRIDE * 8; // larger chunks for file upload
+    let offset = 0;
+    while (offset < pcmData.length) {
+      const end = Math.min(offset + chunkBytes / 2, pcmData.length);
+      const chunk = pcmData.slice(offset, end);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(chunk.buffer);
+      }
+      offset = end;
+    }
+    // Signal end
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ is_speaking: false }));
+    }
+  } catch (e) {
+    alert('音频解码失败: ' + e.message);
+  } finally {
+    ctx.close();
+    input.value = '';
+  }
+}
+
+// === Result Handling ===
+function handleResult(data) {
+  const resultArea = document.getElementById('result-area');
+  // Remove empty placeholder
+  const emptyEl = resultArea.querySelector('.empty-result');
+  if (emptyEl) emptyEl.remove();
+
+  const mode = data.mode || '';
+  const text = data.text || '';
+  const isFinal = data.is_final === true || data.is_final === 'true';
+
+  const record = {
+    timestamp: new Date().toISOString(),
+    mode: mode,
+    text: text,
+    is_final: isFinal,
+  };
+  sessionRecords.push(record);
+
+  if (isFinal) {
+    // Remove current partial if exists
+    if (currentPartialEl) {
+      currentPartialEl.remove();
+      currentPartialEl = null;
+    }
+    if (text) {
+      const el = document.createElement('div');
+      el.className = 'final';
+      el.textContent = text;
+      resultArea.appendChild(el);
+    }
+  } else {
+    // Partial result
+    if (currentPartialEl) {
+      currentPartialEl.textContent = text;
+    } else {
+      const el = document.createElement('div');
+      el.className = 'partial';
+      el.textContent = text;
+      resultArea.appendChild(el);
+      currentPartialEl = el;
+    }
+  }
+
+  // Auto-scroll
+  resultArea.scrollTop = resultArea.scrollHeight;
+}
+
+// === Hotwords ===
+function addHotword() {
+  const input = document.getElementById('hotword-input');
+  const word = input.value.trim();
+  if (!word) return;
+  if (hotwords.includes(word)) { input.value = ''; return; }
+  hotwords.push(word);
+  input.value = '';
+  renderHotwords();
+}
+
+function removeHotword(word) {
+  hotwords = hotwords.filter(w => w !== word);
+  renderHotwords();
+}
+
+function clearHotwords() {
+  hotwords = [];
+  renderHotwords();
+}
+
+function loadPresetHotwords() {
+  const presets = [
+    '出勤率', '合格率', '平均分', '升学率', '及格率',
+    '三年级', '二年级一班', '教务处', '后勤处', '德育处',
+    '教学楼A栋', '教学楼诶栋', '张老师', '李校长',
+    '导出报表', '月视图', '周视图'
+  ];
+  presets.forEach(w => {
+    if (!hotwords.includes(w)) hotwords.push(w);
+  });
+  renderHotwords();
+}
+
+function renderHotwords() {
+  const container = document.getElementById('hotword-list');
+  container.innerHTML = hotwords.map(w =>
+    `<span class="hotword-tag">${w}<span class="remove" onclick="removeHotword('${w}')">&times;</span></span>`
+  ).join('');
+}
+
+// === Result Management ===
+function clearResults() {
+  const resultArea = document.getElementById('result-area');
+  resultArea.innerHTML = '<div class="empty-result">等待音频输入...</div>';
+  currentPartialEl = null;
+  sessionRecords = [];
+}
+
+function copyAll() {
+  const texts = [];
+  document.querySelectorAll('#result-area .final').forEach(el => {
+    texts.push(el.textContent);
+  });
+  if (texts.length === 0) return alert('没有可复制的转写结果');
+  navigator.clipboard.writeText(texts.join('\n')).then(() => {
+    alert('已复制到剪贴板');
+  });
+}
+
+function exportSession() {
+  if (sessionRecords.length === 0) return alert('没有可导出的记录');
+  const mode = document.getElementById('asr-mode').value;
+  const exportData = {
+    export_time: new Date().toISOString(),
+    mode: mode,
+    hotwords: [...hotwords],
+    records: sessionRecords,
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'transcription-session-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
