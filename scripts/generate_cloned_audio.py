@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
+import audioop
 import csv
 import os
-import subprocess
 import sys
 import tempfile
 import wave
@@ -82,18 +82,12 @@ def matches_filter(value, filters):
 def ensure_reference_wav(source_path):
     temp_dir = tempfile.mkdtemp(prefix="flowrium-voice-ref-")
     normalized_path = Path(temp_dir) / "reference_24000_mono.wav"
-    cmd = [
-        "afconvert",
-        "-f",
-        "WAVE",
-        "-d",
-        "LEI16@24000",
-        "-c",
-        "1",
-        str(source_path),
-        str(normalized_path),
-    ]
-    subprocess.run(cmd, check=True)
+
+    # Try ffmpeg first (cross-platform), fall back to Python wave+audioop resampling
+    if _try_ffmpeg_convert(source_path, normalized_path):
+        pass
+    else:
+        _python_convert_to_mono_24k(source_path, normalized_path)
 
     source_duration = get_wav_duration_seconds(source_path)
     normalized_duration = get_wav_duration_seconds(normalized_path)
@@ -112,6 +106,47 @@ def ensure_reference_wav(source_path):
         return source_path
 
     return normalized_path
+
+
+def _try_ffmpeg_convert(source_path, output_path):
+    try:
+        import subprocess
+        subprocess.run(
+            [
+                "ffmpeg", "-y",
+                "-i", str(source_path),
+                "-acodec", "pcm_s16le",
+                "-ar", "24000",
+                "-ac", "1",
+                str(output_path),
+            ],
+            capture_output=True, check=True,
+        )
+        return output_path.exists() and output_path.stat().st_size > 0
+    except Exception:
+        return False
+
+
+def _python_convert_to_mono_24k(source_path, output_path):
+    import audioop
+
+    with wave.open(str(source_path), "rb") as wav:
+        channels = wav.getnchannels()
+        sample_rate = wav.getframerate()
+        sampwidth = wav.getsampwidth()
+        frames = wav.readframes(wav.getnframes())
+
+    if channels > 1:
+        frames = audioop.tomono(frames, sampwidth, 0.5, 0.5)
+
+    if sample_rate != 24000:
+        frames = audioop.ratecv(frames, sampwidth, 1, sample_rate, 24000, None)[0]
+
+    with wave.open(str(output_path), "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(sampwidth)
+        wav.setframerate(24000)
+        wav.writeframes(frames)
 
 
 def get_wav_duration_seconds(path):
