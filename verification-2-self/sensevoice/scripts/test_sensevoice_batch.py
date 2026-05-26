@@ -9,6 +9,7 @@ import statistics
 import sys
 import time
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import requests
@@ -205,51 +206,60 @@ def run_batch(args):
 
     results = []
 
-    for index, row in enumerate(rows, start=1):
-        try:
-            transcription = transcribe_file(args.api_url, row, args.language)
-        except Exception as exc:
-            print(f"[{index}/{len(rows)}] {row['id']} ERROR: {exc}", file=sys.stderr)
-            continue
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        future_map = {}
+        for index, row in enumerate(rows):
+            future = executor.submit(transcribe_file, args.api_url, row, args.language)
+            future_map[future] = (index, row)
 
-        parsed = parse_label_result(transcription["label_result"])
-        clean_text = transcription["results"] or parsed["clean"]
-        expected = row["text"]
-        actual = clean_text
-        expected_norm = normalize(expected)
-        actual_norm = normalize(actual)
-        char_distance = levenshtein(expected_norm, actual_norm)
+        completed = 0
+        for future in as_completed(future_map):
+            completed += 1
+            index, row = future_map[future]
+            try:
+                transcription = future.result()
+            except Exception as exc:
+                print(f"[{completed}/{len(rows)}] {row['id']} ERROR: {exc}", file=sys.stderr)
+                continue
 
-        category = f"{row['version']}/{row['role']}"
+            parsed = parse_label_result(transcription["label_result"])
+            clean_text = transcription["results"] or parsed["clean"]
+            expected = row["text"]
+            actual = clean_text
+            expected_norm = normalize(expected)
+            actual_norm = normalize(actual)
+            char_distance = levenshtein(expected_norm, actual_norm)
 
-        result = {
-            "id": row["id"],
-            "role": row["role"],
-            "version": row["version"],
-            "category": category,
-            "file_path": row["file_path"],
-            "manifest_path": row["manifest_path"],
-            "expected": expected,
-            "actual": actual,
-            "expected_norm": expected_norm,
-            "actual_norm": actual_norm,
-            "norm_exact_match": expected_norm == actual_norm,
-            "char_distance": char_distance,
-            "expected_chars": len(expected_norm),
-            "cer": round(char_distance / len(expected_norm), 4) if expected_norm else 0.0,
-            "language_detected": parsed["lang"],
-            "emotion_detected": parsed["emotion"],
-            "label_result": transcription["label_result"],
-            "latency_ms": transcription["latency_ms"],
-        }
-        results.append(result)
+            category = f"{row['version']}/{row['role']}"
 
-        lang_tag = f" lang={parsed['lang']}" if parsed["lang"] else ""
-        print(
-            f"[{index}/{len(rows)}] {row['id']} "
-            f"exact={result['norm_exact_match']} cer={result['cer']:.4f} "
-            f"latency={result['latency_ms']}ms{lang_tag}"
-        )
+            result = {
+                "id": row["id"],
+                "role": row["role"],
+                "version": row["version"],
+                "category": category,
+                "file_path": row["file_path"],
+                "manifest_path": row["manifest_path"],
+                "expected": expected,
+                "actual": actual,
+                "expected_norm": expected_norm,
+                "actual_norm": actual_norm,
+                "norm_exact_match": expected_norm == actual_norm,
+                "char_distance": char_distance,
+                "expected_chars": len(expected_norm),
+                "cer": round(char_distance / len(expected_norm), 4) if expected_norm else 0.0,
+                "language_detected": parsed["lang"],
+                "emotion_detected": parsed["emotion"],
+                "label_result": transcription["label_result"],
+                "latency_ms": transcription["latency_ms"],
+            }
+            results.append(result)
+
+            lang_tag = f" lang={parsed['lang']}" if parsed["lang"] else ""
+            print(
+                f"[{completed}/{len(rows)}] {row['id']} "
+                f"exact={result['norm_exact_match']} cer={result['cer']:.4f} "
+                f"latency={result['latency_ms']}ms{lang_tag}"
+            )
 
     by_version = defaultdict(list)
     by_role = defaultdict(list)
@@ -421,6 +431,8 @@ def attach_formatted_report(report, markdown_path):
 
 
 def print_summary(markdown):
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
     print()
     print(markdown)
 

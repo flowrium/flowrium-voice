@@ -293,8 +293,24 @@ async def run_batch(args):
     hotwords_payload = build_hotwords_payload(args.hotword)
     results = []
 
-    for index, row in enumerate(rows, start=1):
-        transcription = await transcribe_file(args.ws_url, row, args.mode, hotwords_payload)
+    sem = asyncio.Semaphore(4)
+
+    async def transcribe_with_sem(row):
+        async with sem:
+            transcription = await transcribe_file(args.ws_url, row, args.mode, hotwords_payload)
+            return row, transcription
+
+    tasks = [asyncio.create_task(transcribe_with_sem(row)) for row in rows]
+
+    completed = 0
+    for coro in asyncio.as_completed(tasks):
+        completed += 1
+        try:
+            row, transcription = await coro
+        except Exception as exc:
+            print(f"[{completed}/{len(rows)}] ERROR: {exc}", file=sys.stderr)
+            continue
+
         expected = row["text"]
         actual = transcription["final_text"]
         expected_norm = normalize(expected)
@@ -325,7 +341,7 @@ async def run_batch(args):
         }
         results.append(result)
         print(
-            f"[{index}/{len(rows)}] {row['id']} "
+            f"[{completed}/{len(rows)}] {row['id']} "
             f"exact={result['exact_match']} cer={result['cer']:.4f} "
             f"latency={result['final_latency_ms']}ms"
         )
@@ -482,6 +498,8 @@ def attach_formatted_report(report, markdown_path):
 
 
 def print_summary(markdown):
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
     print()
     print(markdown)
 
