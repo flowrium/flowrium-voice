@@ -108,4 +108,4 @@ python verification-2-self/qwen3-asr/scripts/test_qwen3_asr_batch.py --api-url h
 - This integration assumes an OpenAI-compatible transcription response containing at least `text`
 - No hotword support is currently wired into this route
 - Results are saved to `verification-2-self/qwen3-asr/results/`
-- After each run, the script refreshes `verification-2-self/results/multi-engine-comparison.md`
+- After each run, the script refreshes `verification-2-self/_cross-engine/results/multi-engine-comparison.md`

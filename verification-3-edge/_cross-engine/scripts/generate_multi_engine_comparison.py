@@ -5,38 +5,38 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-OUTPUT_PATH = ROOT_DIR / "verification-2-self" / "results" / "multi-engine-comparison.md"
-LEGACY_OUTPUT_PATH = ROOT_DIR / "verification-2-self" / "results" / "three-engine-comparison.md"
+OUTPUT_PATH = ROOT_DIR / "verification-3-edge" / "_cross-engine" / "results" / "multi-engine-comparison.md"
 
 ENGINE_SOURCES = [
     (
-        "FunASR",
+        "Sherpa-ONNX",
         [
-            ROOT_DIR / "verification-2-self" / "funasr" / "results" / "paraformer-2pass-hotword.json",
-            ROOT_DIR / "verification-2-self" / "funasr" / "results" / "paraformer-results.json",
+            ROOT_DIR / "verification-3-edge" / "sherpa-onnx" / "results" / "sherpa-onnx-paraformer-no-hotword-results.json",
+            ROOT_DIR / "verification-3-edge" / "sherpa-onnx" / "results" / "sherpa-onnx-sensevoice-no-hotword-results.json",
         ],
-        "supports hotwords and 2pass",
+        "native ONNX edge runtime",
     ),
     (
-        "SenseVoice",
+        "whisper.cpp",
         [
-            ROOT_DIR / "verification-2-self" / "sensevoice" / "results" / "sensevoice-results.json",
+            ROOT_DIR / "verification-3-edge" / "whisper.cpp" / "results" / "whisper-cpp-base-no-hotword-results.json",
         ],
-        "offline only, no hotwords",
+        "GGML/GGUF local inference",
     ),
     (
-        "WeNet",
+        "Moonshine",
         [
-            ROOT_DIR / "verification-2-self" / "wenet" / "results" / "wenet-results.json",
+            ROOT_DIR / "verification-3-edge" / "moonshine" / "results" / "moonshine-mandarin-no-hotword-results.json",
         ],
-        "supports hotwords and streaming",
+        "Useful Sensors local model",
     ),
     (
-        "Qwen3-ASR",
+        "WeNet Runtime",
         [
-            ROOT_DIR / "verification-2-self" / "qwen3-asr" / "results" / "qwen3-asr-results.json",
+            ROOT_DIR / "verification-3-edge" / "wenet-runtime" / "results" / "wenet-runtime-docker-bundled-no-hotword-results.json",
+            ROOT_DIR / "verification-3-edge" / "wenet-runtime" / "results" / "wenet-runtime-docker-bundled-hotword-results.json",
         ],
-        "OpenAI-compatible offline transcription API",
+        "runtime server over WebSocket",
     ),
 ]
 
@@ -54,12 +54,6 @@ def fmt_pct(value):
     if value is None:
         return "—"
     return f"{value:.2%}"
-
-
-def fmt_ms(value):
-    if value is None:
-        return "—"
-    return f"{value:.1f}ms"
 
 
 def generate_markdown():
@@ -87,14 +81,12 @@ def generate_markdown():
         )
 
     lines = []
-    lines.append("## Multi-engine ASR Comparison")
+    lines.append("## Edge Multi-engine ASR Comparison")
     lines.append("")
-    lines.append(
-        "This report aggregates the latest available self-deploy results for FunASR, SenseVoice, WeNet, and Qwen3-ASR."
-    )
+    lines.append("This report aggregates the latest available edge verification results.")
     lines.append("")
     lines.append("### Overall")
-    lines.append("| Engine | Count | Success Rate | CER | Avg Latency | P95 Latency | Notes | Source |")
+    lines.append("| Engine | Count | Success Rate | CER | Avg RTF | P95 RTF | Notes | Source |")
     lines.append("| --- | --- | --- | --- | --- | --- | --- | --- |")
     for item in available:
         overall = item["overall"]
@@ -102,14 +94,13 @@ def generate_markdown():
             f"| {item['engine']} | {overall.get('count', 0)} | "
             f"{fmt_pct(overall.get('norm_exact_match_rate'))} | "
             f"{fmt_pct(overall.get('cer'))} | "
-            f"{fmt_ms(overall.get('avg_latency_ms') or overall.get('avg_final_latency_ms'))} | "
-            f"{fmt_ms(overall.get('p95_latency_ms') or overall.get('p95_final_latency_ms'))} | "
+            f"{overall.get('avg_rtf', '—')} | "
+            f"{overall.get('p95_rtf', '—')} | "
             f"{item['note']} | {item['path'].relative_to(ROOT_DIR)} |"
         )
     if not available:
         lines.append("| — | — | — | — | — | — | — | — |")
     lines.append("")
-
     lines.append("### By Category")
     lines.append("| Category | Engine | Success Rate | CER |")
     lines.append("| --- | --- | --- | --- |")
@@ -128,12 +119,11 @@ def generate_markdown():
     else:
         lines.append("| — | — | — | — |")
     lines.append("")
-
     lines.append("### Availability")
     if missing:
         lines.append(f"Missing result files for: {', '.join(missing)}")
     else:
-        lines.append("All four engine result files are present.")
+        lines.append("All configured edge result files are present.")
     lines.append("")
     return "\n".join(lines)
 
@@ -142,7 +132,6 @@ def main():
     markdown = generate_markdown()
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(markdown, encoding="utf-8")
-    LEGACY_OUTPUT_PATH.write_text(markdown, encoding="utf-8")
     print(f"Wrote comparison report to {OUTPUT_PATH}")
 
 

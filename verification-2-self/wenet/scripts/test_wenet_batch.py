@@ -494,6 +494,8 @@ def attach_formatted_report(report, markdown_path):
 
 
 def print_summary(markdown):
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
     print()
     print(markdown)
 
