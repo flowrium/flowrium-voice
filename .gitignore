@@ -21,6 +21,8 @@ models/*.bin
 models/*.pt
 *.ort
 verification-3-edge/sherpa-onnx/models/**/*.onnx
+verification-3-edge/vosk/models/
+!verification-3-edge/vosk/models/PLACEHOLDER.md
 verification-3-edge/moonshine/cache/
 verification-3-edge/moonshine/models/
 verification-3-edge/moonshine/vendor/
@@ -29,12 +31,9 @@ verification-3-edge/whisper.cpp/models/
 # Vendor directories
 vendor/
 
-# Audio files (test data)
-# *.wav
-# *.mp3
-# *.flac
-# *.ogg
-# *.m4a
+# Large audio reference files (download via script)
+audio_refs/*.wav
+!audio_refs/PLACEHOLDER.md
 
 # Logs
 *.log
