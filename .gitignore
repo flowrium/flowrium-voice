@@ -33,7 +33,7 @@ vendor/
 
 # Large audio reference files (download via script)
 audio_refs/*.wav
-!audio_refs/PLACEHOLDER.md
+!*/PLACEHOLDER.md
 
 # Logs
 *.log
