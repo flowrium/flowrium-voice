@@ -11,6 +11,7 @@
 | Sherpa-ONNX | C++ ONNX 推理引擎，跨平台 | Android, Apple, C#, HarmonyOS |
 | whisper.cpp | GGML/GGUF 本地推理，跨平台 | Apple, Android, Linux, Windows |
 | Moonshine | 轻量端侧 ASR，偏实时交互 | Apple, Android, Linux |
+| Vosk | 轻量 Kaldi 离线 ASR，纯 Python API，无需编译 | Apple, Android, Linux |
 | WeNet Runtime | Runtime / WebSocket 服务，适合作为原生集成前的参考链路 | Apple, Android, Linux |
 | MindSpore Lite | 华为端侧推理框架，.ms 模型格式 | HarmonyOS |
 
@@ -43,6 +44,15 @@ verification-3-edge/
 │   └── integrations/
 │       └── apple/
 ├── moonshine/                      # 技术：Moonshine
+│   ├── models/
+│   ├── results/
+│   ├── scripts/
+│   ├── setup/
+│   ├── benchmarks/
+│   │   └── apple/
+│   └── integrations/
+│       └── apple/
+├── vosk/                           # 技术：Vosk
 │   ├── models/
 │   ├── results/
 │   ├── scripts/

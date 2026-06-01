@@ -1,0 +1,11 @@
+id,role,version,category,file_path,expected,actual,exact_match,norm_exact_match,char_distance,expected_chars,cer,rtf,audio_duration_s,inference_time_s
+principal_001,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_001.wav,打开学校今日运行数据大屏。,大开学校今日运行数据大屏。,False,False,1,12,0.0833,5.9511,2.838,16.8916
+principal_002,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_002.wav,切换到校长驾驶舱首页。,切换到校长驾驶舱首页。,True,True,0,10,0.0,6.4772,2.456,15.9057
+principal_003,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_003.wav,帮我打开学校运行总览。,帮我打开学校运行总览,False,True,0,10,0.0,6.6854,2.358,15.766
+principal_004,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_004.wav,我想看一下今天的学校整体情况。,我想看一下今天的学校整体情况。,True,True,0,14,0.0,5.2467,3.128,16.4101
+principal_005,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_005.wav,打开校长驾驶舱里的学校运行总览页。,"打开校长驾驶舱里的学校运行总览页,",False,True,0,16,0.0,5.5979,3.605,20.1785
+principal_006,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_006.wav,看学校总览。,看学校总览,False,True,0,5,0.0,16.4314,1.258,20.679
+principal_007,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_007.wav,查看今天全校学生到校情况。,查看今天全校学生到校情况。,True,True,0,12,0.0,5.833,3.167,18.4704
+principal_008,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_008.wav,查询本周各年级学生出勤率。,查询本周各年级学生出勤率,False,True,0,12,0.0,6.9259,2.679,18.5541
+principal_009,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_009.wav,帮我看一下今天全校到校情况。,帮我看一下今天全校到校情况,False,True,0,13,0.0,5.521,3.101,17.1224
+principal_010,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_010.wav,我想查一下这周各年级的出勤率。,我想查一下这周各年级的出勤率。,True,True,0,14,0.0,6.2106,2.861,17.7662
