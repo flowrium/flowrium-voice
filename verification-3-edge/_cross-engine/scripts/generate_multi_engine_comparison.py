@@ -31,6 +31,13 @@ ENGINE_SOURCES = [
         "Useful Sensors local model",
     ),
     (
+        "Vosk",
+        [
+            ROOT_DIR / "verification-3-edge" / "vosk" / "results" / "vosk-small-no-hotword-results.json",
+        ],
+        "Kaldi offline ASR, pure Python",
+    ),
+    (
         "WeNet Runtime",
         [
             ROOT_DIR / "verification-3-edge" / "wenet-runtime" / "results" / "wenet-runtime-docker-bundled-no-hotword-results.json",

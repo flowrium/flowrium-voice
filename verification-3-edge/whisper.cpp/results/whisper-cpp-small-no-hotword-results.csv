@@ -1,0 +1,11 @@
+id,role,version,category,file_path,expected,actual,exact_match,norm_exact_match,char_distance,expected_chars,cer,rtf,audio_duration_s,inference_time_s
+principal_001,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_001.wav,打开学校今日运行数据大屏。,打开学校今日运行数据大屏,False,True,0,12,0.0,2.039,2.838,5.7875
+principal_002,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_002.wav,切换到校长驾驶舱首页。,切換到校長駕駛艙手藝,False,False,7,10,0.7,1.86,2.456,4.5674
+principal_003,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_003.wav,帮我打开学校运行总览。,帮我打开学校运行踪篮,False,False,2,10,0.2,1.9335,2.358,4.5598
+principal_004,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_004.wav,我想看一下今天的学校整体情况。,我想看一下今天的學校整體情況。,False,False,3,14,0.2143,1.4642,3.128,4.5796
+principal_005,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_005.wav,打开校长驾驶舱里的学校运行总览页。,打開校長駕駛艙裡的學校運行總產業,False,False,11,16,0.6875,1.8041,3.605,6.5032
+principal_006,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_006.wav,看学校总览。,看學校總蘭,False,False,3,5,0.6,3.8778,1.258,4.8803
+principal_007,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_007.wav,查看今天全校学生到校情况。,查看今天全校学生到校情况。,True,True,0,12,0.0,1.1679,3.167,3.6981
+principal_008,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_008.wav,查询本周各年级学生出勤率。,查詢本周各年級學生出情侶,False,False,5,12,0.4167,1.796,2.679,4.8113
+principal_009,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_009.wav,帮我看一下今天全校到校情况。,幫我看一下今天全笑到笑情況。,False,False,4,13,0.3077,1.2425,3.101,3.8535
+principal_010,principal,standard,standard/principal,/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/principal/principal_010.wav,我想查一下这周各年级的出勤率。,我想查一下这周各年级的初情率,False,False,2,14,0.1429,2.0761,2.861,5.9389
