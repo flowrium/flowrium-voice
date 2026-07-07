@@ -1,5 +1,5 @@
 ---
-name: self-whisper-cpp-test
+name: edge-whisper-cpp-test
 description: Run whisper.cpp batch ASR tests locally (no external service needed) against audio manifests. Supports base, small, and large-v3-turbo models with CER metrics and RTF. Accepts args like "10" (limit), "--model large-v3-turbo --limit 5", "--role principal", etc.
 metadata:
   author: flowrium
@@ -10,19 +10,19 @@ Run whisper.cpp batch ASR tests against the project's audio manifests using the 
 
 ## Arguments
 
-The skill accepts arguments passed after `/self-whisper-cpp-test`. Parse them as follows:
+The skill accepts arguments passed after `/edge-whisper-cpp-test`. Parse them as follows:
 
-- **A bare number** → treated as `--limit` (test only the first N rows). Example: `/self-whisper-cpp-test 10`
-- **Any other text** → passed through as-is to the script. Example: `/self-whisper-cpp-test --model large-v3-turbo --role principal`
+- **A bare number** → treated as `--limit` (test only the first N rows). Example: `/edge-whisper-cpp-test 10`
+- **Any other text** → passed through as-is to the script. Example: `/edge-whisper-cpp-test --model large-v3-turbo --role principal`
 - **No arguments** → run with defaults (all rows, base model)
 
 | User Input | Parsed Command | Meaning |
 | --- | --- | --- |
-| `/self-whisper-cpp-test` | (no args) | All rows, base model |
-| `/self-whisper-cpp-test 5` | `--limit 5` | First 5 rows, base model |
-| `/self-whisper-cpp-test --model large-v3-turbo` | `--model large-v3-turbo` | All rows, large-v3-turbo |
-| `/self-whisper-cpp-test 10 --model small` | `--model small --limit 10` | First 10 rows, small model |
-| `/self-whisper-cpp-test --role principal` | `--role principal` | All principal rows, base model |
+| `/edge-whisper-cpp-test` | (no args) | All rows, base model |
+| `/edge-whisper-cpp-test 5` | `--limit 5` | First 5 rows, base model |
+| `/edge-whisper-cpp-test --model large-v3-turbo` | `--model large-v3-turbo` | All rows, large-v3-turbo |
+| `/edge-whisper-cpp-test 10 --model small` | `--model small --limit 10` | First 10 rows, small model |
+| `/edge-whisper-cpp-test --role principal` | `--role principal` | All principal rows, base model |
 
 **Parsing rule**: If the first argument is a plain integer, prepend `--limit` before it. All other arguments pass through unchanged.
 

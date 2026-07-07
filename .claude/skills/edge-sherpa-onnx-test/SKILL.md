@@ -1,5 +1,5 @@
 ---
-name: self-sherpa-onnx-test
+name: edge-sherpa-onnx-test
 description: Run Sherpa-ONNX batch ASR tests locally (no external service needed) against audio manifests. Supports paraformer, sensevoice, and transducer models with CER metrics, RTF, and hotword analysis (transducer only). Accepts args like "10" (limit), "--model transducer --limit 5", "--role principal", etc.
 metadata:
   author: flowrium
@@ -10,21 +10,21 @@ Run Sherpa-ONNX batch ASR tests against the project's audio manifests using loca
 
 ## Arguments
 
-The skill accepts arguments passed after `/self-sherpa-onnx-test`. Parse them as follows:
+The skill accepts arguments passed after `/edge-sherpa-onnx-test`. Parse them as follows:
 
-- **A bare number** → treated as `--limit` (test only the first N rows). Example: `/self-sherpa-onnx-test 10`
-- **Any other text** → passed through as-is to the script. Example: `/self-sherpa-onnx-test --model transducer --role principal --limit 5`
+- **A bare number** → treated as `--limit` (test only the first N rows). Example: `/edge-sherpa-onnx-test 10`
+- **Any other text** → passed through as-is to the script. Example: `/edge-sherpa-onnx-test --model transducer --role principal --limit 5`
 - **No arguments** → run with defaults (all rows, paraformer model)
 
 | User Input | Parsed Command | Meaning |
 | --- | --- | --- |
-| `/self-sherpa-onnx-test` | (no args) | All rows, paraformer |
-| `/self-sherpa-onnx-test 5` | `--limit 5` | First 5 rows, paraformer |
-| `/self-sherpa-onnx-test --model transducer` | `--model transducer` | All rows, transducer |
-| `/self-sherpa-onnx-test 10 --model sensevoice` | `--model sensevoice --limit 10` | First 10 rows, sensevoice |
-| `/self-sherpa-onnx-test --role principal` | `--role principal` | All principal rows, paraformer |
-| `/self-sherpa-onnx-test --model transducer --hotword 出勤率` | `--model transducer --hotword 出勤率` | Transducer with hotword |
-| `/self-sherpa-onnx-test --use-hotwords-file` | `--use-hotwords-file` | Load hotwords from configured file |
+| `/edge-sherpa-onnx-test` | (no args) | All rows, paraformer |
+| `/edge-sherpa-onnx-test 5` | `--limit 5` | First 5 rows, paraformer |
+| `/edge-sherpa-onnx-test --model transducer` | `--model transducer` | All rows, transducer |
+| `/edge-sherpa-onnx-test 10 --model sensevoice` | `--model sensevoice --limit 10` | First 10 rows, sensevoice |
+| `/edge-sherpa-onnx-test --role principal` | `--role principal` | All principal rows, paraformer |
+| `/edge-sherpa-onnx-test --model transducer --hotword 出勤率` | `--model transducer --hotword 出勤率` | Transducer with hotword |
+| `/edge-sherpa-onnx-test --use-hotwords-file` | `--use-hotwords-file` | Load hotwords from configured file |
 
 **Parsing rule**: If the first argument is a plain integer, prepend `--limit` before it. All other arguments pass through unchanged.
 

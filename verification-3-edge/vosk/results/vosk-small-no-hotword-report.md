@@ -1,29 +1,40 @@
 ## Vosk small Test Results
 
-**Config**: model=small, model_path=/Users/lixiaofeng/Code/github/flowrium-voice/verification-3-edge/vosk/models/vosk-model-small-cn-0.22, manifests=/Users/lixiaofeng/Code/github/flowrium-voice/audio/standard/manifest.csv, /Users/lixiaofeng/Code/github/flowrium-voice/audio/humanized/manifest.csv, /Users/lixiaofeng/Code/github/flowrium-voice/audio/myvoice/manifest.csv
+**Config**: model=small, model_path=/Users/lixiaofeng/Workspace/personal/flowrium-voice/verification-3-edge/vosk/models/vosk-model-small-cn-0.22, manifests=/Users/lixiaofeng/Workspace/personal/flowrium-voice/audio/standard/manifest.csv, /Users/lixiaofeng/Workspace/personal/flowrium-voice/audio/humanized/manifest.csv, /Users/lixiaofeng/Workspace/personal/flowrium-voice/audio/myvoice/manifest.csv
 
 ### Overall
 | Metric | Value | Note |
 | --- | --- | --- |
-| 测试总数 | 5 | |
-| 成功条数 | 3 | 归一化后完全匹配 |
-| **成功率** | **60.00%** | 成功条数/总条数 |
-| CER | 4.84% | 字符错误率 |
-| 平均 RTF | 0.5674 | <1.0 表示快于实时 |
-| P95 RTF | 0.6102 | |
+| 测试总数 | 720 | |
+| 成功条数 | 418 | 归一化后完全匹配 |
+| **成功率** | **58.06%** | 成功条数/总条数 |
+| CER | 6.29% | 字符错误率 |
+| 平均 RTF | 0.3213 | <1.0 表示快于实时 |
+| P95 RTF | 0.4965 | |
 
 ### By Role
 | Role | Count | 成功数 | **成功率** | CER | Avg RTF |
 | --- | --- | --- | --- | --- | --- |
-| principal | 5 | 3 | **60.00%** | 4.84% | 0.5674 |
+| director | 180 | 100 | **55.56%** | 7.16% | 0.3128 |
+| principal | 180 | 83 | **46.11%** | 7.32% | 0.3006 |
+| staff | 180 | 133 | **73.89%** | 3.55% | 0.3430 |
+| teacher | 180 | 102 | **56.67%** | 6.78% | 0.3286 |
 
 ### By Version
 | Version | Count | 成功数 | **成功率** | CER | Avg RTF |
 | --- | --- | --- | --- | --- | --- |
-| standard | 5 | 3 | **60.00%** | 4.84% | 0.5674 |
+| humanized | 240 | 159 | **66.25%** | 4.15% | 0.3266 |
+| myvoice | 240 | 104 | **43.33%** | 10.43% | 0.3000 |
+| standard | 240 | 155 | **64.58%** | 4.30% | 0.3372 |
 
 ### Failed Cases (top 8)
 | ID | Expected | Actual | CER |
 | --- | --- | --- | --- |
-| principal_005 | 打开校长驾驶舱里的学校运行总览页。 | 打开 校长 驾驶舱 里 的 学校 运行 总揽 夜 | 12.50% |
-| principal_003 | 帮我打开学校运行总览。 | 帮 我 打开 学校 运行 总揽 | 10.00% |
+| director_042 | 看调课审批。 | 砍掉 雕刻 审批 | 80.00% |
+| staff_006 | 打开办公台。 | 那 派 半公开 | 80.00% |
+| staff_042 | 提报修。 | 题 保修 | 66.67% |
+| staff_042 | 提报修。 | 题 保修 | 66.67% |
+| teacher_054 | 看家校沟通。 | 参加 小 沟通 | 60.00% |
+| teacher_054 | 看家校沟通。 | 参加 小 沟通 | 60.00% |
+| principal_048 | 看招生分析。 | 按照 上 分析 | 60.00% |
+| director_036 | 看值班安排。 | 但 纸板 安排 | 60.00% |
