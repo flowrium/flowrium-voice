@@ -1,115 +1,126 @@
 ---
 name: edge-sherpa-onnx-test
-description: Run Sherpa-ONNX edge batch ASR tests against the project's audio manifests using local quantized models. Outputs CER, RTF, and grouped summaries. Accepts args like "10" (limit), "--model sensevoice", "--role principal", etc.
+description: Run Sherpa-ONNX batch ASR tests locally (no external service needed) against audio manifests. Supports paraformer, sensevoice, and transducer models with CER metrics, RTF, and hotword analysis (transducer only). Accepts args like "10" (limit), "--model transducer --limit 5", "--role principal", etc.
 metadata:
   author: flowrium
   version: "1.0"
 ---
 
-Run Sherpa-ONNX edge batch ASR tests against the project's audio manifests with local quantized models. This skill wraps `verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py` and provides structured result formatting.
+Run Sherpa-ONNX batch ASR tests against the project's audio manifests using local ONNX quantized models. This skill wraps `verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py` and provides structured result formatting. Unlike SenseVoice/WeNet skills, **no external service is needed** — inference runs locally.
 
 ## Arguments
 
 The skill accepts arguments passed after `/edge-sherpa-onnx-test`. Parse them as follows:
 
-- **A bare number** -> treated as `--limit` (test only the first N rows across all roles). Example: `/edge-sherpa-onnx-test 10`
-- **Any other text** -> passed through as-is to the script. Example: `/edge-sherpa-onnx-test --model sensevoice --role principal`
-- **No arguments** -> run with defaults (`--model paraformer`, all rows, all manifests)
+- **A bare number** → treated as `--limit` (test only the first N rows). Example: `/edge-sherpa-onnx-test 10`
+- **Any other text** → passed through as-is to the script. Example: `/edge-sherpa-onnx-test --model transducer --role principal --limit 5`
+- **No arguments** → run with defaults (all rows, paraformer model)
 
 | User Input | Parsed Command | Meaning |
 | --- | --- | --- |
-| `/edge-sherpa-onnx-test` | `--model paraformer` | All rows with Paraformer Int8 |
-| `/edge-sherpa-onnx-test 5` | `--model paraformer --limit 5` | First 5 rows total |
-| `/edge-sherpa-onnx-test --model sensevoice` | `--model sensevoice` | All rows with SenseVoice Int8 |
-| `/edge-sherpa-onnx-test --role principal` | `--model paraformer --role principal` | All principal rows only |
-| `/edge-sherpa-onnx-test 10 --version myvoice` | `--model paraformer --limit 10 --version myvoice` | First 10 myvoice rows |
-| `/edge-sherpa-onnx-test --manifest audio/standard/manifest.csv` | `--model paraformer --manifest audio/standard/manifest.csv` | Only one manifest |
+| `/edge-sherpa-onnx-test` | (no args) | All rows, paraformer |
+| `/edge-sherpa-onnx-test 5` | `--limit 5` | First 5 rows, paraformer |
+| `/edge-sherpa-onnx-test --model transducer` | `--model transducer` | All rows, transducer |
+| `/edge-sherpa-onnx-test 10 --model sensevoice` | `--model sensevoice --limit 10` | First 10 rows, sensevoice |
+| `/edge-sherpa-onnx-test --role principal` | `--role principal` | All principal rows, paraformer |
+| `/edge-sherpa-onnx-test --model transducer --hotword 出勤率` | `--model transducer --hotword 出勤率` | Transducer with hotword |
+| `/edge-sherpa-onnx-test --use-hotwords-file` | `--use-hotwords-file` | Load hotwords from configured file |
 
-**Parsing rule**: If the first argument is a plain integer, prepend `--limit` before it. Unless `--model` is explicitly provided, default to `--model paraformer`.
+**Parsing rule**: If the first argument is a plain integer, prepend `--limit` before it. All other arguments pass through unchanged.
 
 ## Prerequisites
 
-- `sherpa-onnx` Python package installed and importable
-- Model files present under `verification-3-edge/sherpa-onnx/models/`
-- Audio manifests exist under `audio/`
-- Recommended precheck:
-
-```bash
-bash verification-3-edge/sherpa-onnx/setup/verify_setup.sh
-```
+- ONNX model files downloaded under `verification-3-edge/sherpa-onnx/models/` (run `download_models.sh` first)
+- Python dependencies: `sherpa-onnx`, `numpy`
+- Audio manifests exist under `audio/` directories
+- **No external service required** — runs fully offline
 
 ## Commands
 
 ### Quick test
 
 ```bash
-python3 verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model paraformer [--limit N] [--version V] [--role R]
+python verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py [--model paraformer|sensevoice|transducer] [--limit N] [--version V] [--role R] [--hotword WORD]
 ```
 
 ## Key CLI Flags
 
 | Flag | Description | Default |
 | --- | --- | --- |
-| `--model` | Model to test: `paraformer` or `sensevoice` | `paraformer` |
+| `--model` | Model to use: `paraformer`, `sensevoice`, `transducer` | `paraformer` |
 | `--manifest` | Manifest CSV path (repeatable) | all 3 manifests |
+| `--hotword` | Hotword (repeatable, transducer only) | none |
+| `--use-hotwords-file` | Load hotwords from `config/hotwords.txt` | off |
+| `--decoding-method` | Transducer decoding: `greedy_search` or `modified_beam_search` | auto |
+| `--max-active-paths` | Transducer max active paths | 4 |
+| `--hotwords-score` | Transducer hotword bias score | 1.5 |
 | `--limit` | Only test first N rows | 0 (all) |
 | `--version` | Filter by version (repeatable) | all |
 | `--role` | Filter by role (repeatable) | all |
-| `--hotword` | Hotword to pass through | none |
-| `--hotwords-file` | Hotwords file path | `config/hotwords.txt` |
 
 ## What This Skill Does
 
 When the user invokes this skill, follow these steps:
 
-1. **Parse arguments** - apply the rules from the Arguments section above (bare number -> `--limit`)
-2. **Check local setup** - confirm `sherpa_onnx` imports and model files exist before starting tests
+1. **Parse arguments** — apply the rules from the Arguments section above (bare number → `--limit`)
+2. **Check prerequisites** — verify model files exist (listed in `MODEL_CONFIGS`), and sherpa-onnx is importable
 3. **Run the test command** with parsed args
-4. **Format and present results** by following the shared ASR report format file, with Sherpa-ONNX-specific metric substitutions noted below
+4. **Format and present results** using the structure below
 
 ## Metrics & Report Format
 
-指标说明和默认输出格式必须遵循公共文件：[asr-report-format.md](../../../.claude/skills/_shared/asr-report-format.md)
+指标说明和报告格式见公共文件：[_shared/asr-report-format.md](../_shared/asr-report-format.md)
 
 ### Sherpa-ONNX 特有说明
 
-- 这是本地离线推理，不依赖 WebSocket 或 HTTP 服务
-- 主要指标是 `总体成功率`、`CER` 和 `RTF`
-- 当前仓库里的 Paraformer Int8 和 SenseVoice Int8 都不支持热词；传入 `--hotword` 时脚本会忽略并提示
-- 结果默认写到 `verification-3-edge/sherpa-onnx/results/`
-- 单次运行的用户汇报结构默认沿用 shared format 的 `Single Mode Run`
-- shared format 里的 `平均最终延迟` / `P95 最终延迟` 在本 skill 中替换为 `平均 RTF` / `P95 RTF`
-- 如果脚本打印大量逐条日志或重采样日志，只用于内部观察；面向用户的最终汇报仍按 shared format 收口，不直接粘贴原始长日志
+- **无需外部服务**：本地 ONNX 推理，不依赖 HTTP/WebSocket 服务
+- 支持 3 种模型：
+  - **paraformer** (默认)：离线识别，不支持热词
+  - **sensevoice**：离线识别，支持语言检测和 ITN，不支持热词
+  - **transducer**：流式识别，支持热词(`modified_beam_search`)
+- 热词仅 transducer + `modified_beam_search` 组合支持
+- 结果自动保存到 `verification-3-edge/sherpa-onnx/results/`
+- 文件名格式：`sherpa-onnx-{model}-{hotword|no-hotword}-results.{json|csv}` 及 `-report.md`
 
 ## Common Workflows
 
-### "Run a quick smoke test"
-
+### "Run a quick smoke test with paraformer"
 ```bash
-python3 verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model paraformer --limit 5
+python verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --limit 5
 ```
 
-### "Compare the two models on the same slice"
-
+### "Test all models sequentially"
 ```bash
-python3 verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model paraformer --role principal --limit 20
-python3 verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model sensevoice --role principal --limit 20
+python verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model paraformer --limit 10
+python verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model sensevoice --limit 10
+python verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model transducer --limit 10
 ```
 
-### "Test only myvoice"
-
+### "Test transducer with hotwords"
 ```bash
-python3 verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model paraformer --version myvoice
+python verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model transducer --hotword 出勤率 --hotword 合格率
 ```
 
-### "Run full batch with SenseVoice"
-
+### "Test transducer with hotwords file"
 ```bash
-python3 verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model sensevoice
+python verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model transducer --use-hotwords-file
+```
+
+### "Test only principal role with sensevoice"
+```bash
+python verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --model sensevoice --role principal
+```
+
+### "Filter by specific version"
+```bash
+python verification-3-edge/sherpa-onnx/scripts/test_sherpa_onnx_batch.py --version v1.0 --version v2.0
 ```
 
 ## Notes
 
-- This skill is for edge accuracy validation, not platform integration testing
-- Accuracy results are model-level and do not need to be split by Android vs Apple when the same ONNX model and preprocessing path are used
-- Platform-specific work such as streaming latency, memory, and integration belongs in later edge benchmark or integration tasks
+- Sherpa-ONNX 运行纯本地推理，不需要任何外部服务，开箱即用（只要模型文件已下载）
+- 三种模型的 recognizer 类型不同：paraformer 和 sensevoice 为 `OfflineRecognizer`，transducer 为 `OnlineRecognizer`
+- 使用 Levenshtein 距离计算 CER
+- 文本归一化去除所有中英文标点和空格后再比较
+- 热词自动去重；非 transducer 模型使用热词会被忽略并给出警告
+- Results are saved to `verification-3-edge/sherpa-onnx/results/`

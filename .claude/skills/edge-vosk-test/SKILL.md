@@ -1,5 +1,5 @@
 ---
-name: self-vosk-test
+name: edge-vosk-test
 description: Run Vosk batch ASR tests locally (no external service needed) against audio manifests. Supports small and big Chinese models with CER metrics and RTF. Accepts args like "10" (limit), "--model big --limit 5", "--role principal", etc.
 metadata:
   author: flowrium
@@ -10,19 +10,19 @@ Run Vosk batch ASR tests against the project's audio manifests using local Vosk 
 
 ## Arguments
 
-The skill accepts arguments passed after `/self-vosk-test`. Parse them as follows:
+The skill accepts arguments passed after `/edge-vosk-test`. Parse them as follows:
 
-- **A bare number** → treated as `--limit` (test only the first N rows). Example: `/self-vosk-test 10`
-- **Any other text** → passed through as-is to the script. Example: `/self-vosk-test --model big --role principal`
+- **A bare number** → treated as `--limit` (test only the first N rows). Example: `/edge-vosk-test 10`
+- **Any other text** → passed through as-is to the script. Example: `/edge-vosk-test --model big --role principal`
 - **No arguments** → run with defaults (all rows, small model)
 
 | User Input | Parsed Command | Meaning |
 | --- | --- | --- |
-| `/self-vosk-test` | (no args) | All rows, small model |
-| `/self-vosk-test 5` | `--limit 5` | First 5 rows, small model |
-| `/self-vosk-test --model big` | `--model big` | All rows, big model |
-| `/self-vosk-test 10 --model big` | `--model big --limit 10` | First 10 rows, big model |
-| `/self-vosk-test --role principal` | `--role principal` | All principal rows, small model |
+| `/edge-vosk-test` | (no args) | All rows, small model |
+| `/edge-vosk-test 5` | `--limit 5` | First 5 rows, small model |
+| `/edge-vosk-test --model big` | `--model big` | All rows, big model |
+| `/edge-vosk-test 10 --model big` | `--model big --limit 10` | First 10 rows, big model |
+| `/edge-vosk-test --role principal` | `--role principal` | All principal rows, small model |
 
 **Parsing rule**: If the first argument is a plain integer, prepend `--limit` before it. All other arguments pass through unchanged.
 
